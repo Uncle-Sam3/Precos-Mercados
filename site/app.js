@@ -414,9 +414,24 @@ function rowEl(p) {
     const h = document.createElement('div'); h.className = 'hist';
     h.innerHTML = p.h.map(([d, v, s, ref]) => `<div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))} · <span class="src">${srcLink(s, ref)}</span></small></div>
       <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}${p.qu ? `<small>${BRL(perUnit(p, v))}/${p.qu.u}</small>` : ''}</div></div>`).join('');
-    el.appendChild(h);
+    const tx = document.createElement('div'); tx.className = 'tax'; tx.textContent = 'Tributos aproximados…';
+    h.appendChild(tx); el.appendChild(h);
+    taxBox(p, v, cur && cur.uf).then(html => tx.innerHTML = html);
   };
   return el;
+}
+// ---- tributos aproximados (Lei 12.741/2012, tabela oficial IBPT por NCM e UF da loja) ----
+const IBPT = {};
+async function taxBox(p, price, uf) {
+  const na = '<div class="tt">Tributos aproximados</div><div class="tn">Imposto não disponível <small>(produto sem NCM informado pelo site)</small></div>';
+  const ncm = p.ncm && String(p.ncm).replace(/\D/g, '');
+  if (!ncm || ncm.length !== 8 || !uf) return na;
+  let T; try { T = await (IBPT[uf] ||= fetch(`data/ibpt/${uf}.json`).then(r => r.json())); } catch (e) { return na; }
+  const a = T.t[ncm]; if (!a) return na;
+  const [fed, , est, mun] = a, tot = fed + est + mun, R = x => BRL(price * x / 100), P = x => x.toLocaleString('pt-BR', {maximumFractionDigits: 2}) + '%';
+  return `<div class="tt">Tributos aproximados: <b>${R(tot)}</b> <small>(${P(tot)} do preço · NCM ${ncm})</small></div>
+    <div class="tb"><span>Federal <b>${R(fed)}</b> <small>${P(fed)}</small></span><span>Estadual (${uf}) <b>${R(est)}</b> <small>${P(est)}</small></span><span>Municipal <b>${R(mun)}</b> <small>${P(mun)}</small></span></div>
+    <div class="tf">Fonte: IBPT — De Olho no Imposto, tabela ${esc(T.versao)} (vigência ${esc(T.vigencia[0])} a ${esc(T.vigencia[1])}). Federal para produto nacional.</div>`;
 }
 
 // ---- busca de cidades/estados (dados IBGE embutidos) ----

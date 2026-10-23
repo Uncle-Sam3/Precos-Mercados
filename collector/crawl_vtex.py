@@ -56,7 +56,9 @@ class Crawler:
                 n=p.get("productName"), b=p.get("brand"), e=it.get("ean") or None, s=p.get("linkText"),
                 i=(it.get("images") or [{}])[0].get("imageUrl", "").split("?")[0] or None,
                 c=(p.get("categories") or [""])[0].strip("/").split("/")[-1] or None,
-                price=round(float(price), 2), ok=bool(avail))
+                price=round(float(price), 2), ok=bool(avail),
+                ncm=next((re.sub(r"\D", "", str(v[0] if isinstance(v, list) and v else v)) for k, v in p.items()
+                          if re.fullmatch(r"(c[oó]digo\s*)?ncm", k.strip(), re.I) and v), None))  # NCM só se o site publicar
         except Exception as e:
             pass
     def crawl_fq(self, fq, children, depth=0):
@@ -103,6 +105,7 @@ def crawl(cid):
         for k in ("n", "b", "e", "s", "i", "c"): pr[k] = f[k]
         if f["price"] > 0: store.add_live(pr, TODAY, f["price"])
         pr["ok"] = f["ok"]; pr.pop("x", None); pr.pop("ls", None)
+        if f.get("ncm") and len(f["ncm"]) == 8: pr["ncm"] = f["ncm"]
     # produtos que não apareceram nesta coleta completa: marca data de saída (só se a coleta cobriu >= 90% do catálogo)
     if total and len(cr.found) >= 0.9 * total:
         for pid, pr in d["p"].items():
