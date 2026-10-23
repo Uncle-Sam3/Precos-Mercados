@@ -1,0 +1,5 @@
+*.log
+cdx_test.txt
+__pycache__/
+*.tmp
+screenshot*.png

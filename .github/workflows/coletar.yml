@@ -1,0 +1,40 @@
+name: Coletar preços (diário)
+on:
+  schedule:
+    - cron: "0 9 * * *"     # 06:00 em Brasília
+  workflow_dispatch:
+    inputs:
+      redes: { description: "Redes (vazio = todas)", required: false, default: "" }
+permissions:
+  contents: write
+concurrency: { group: coleta, cancel-in-progress: false }
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - name: Catálogo completo (VTEX) — preço do dia
+        run: PAR=6 python collector/crawl_vtex.py ${{ github.event.inputs.redes }}
+      - name: Histórico de arquivos da web (Arquivo.pt, Wayback, Common Crawl) — incremental
+        continue-on-error: true
+        timeout-minutes: 150
+        run: MAX_FETCH=80 python collector/archives.py --fontes a,w,c ${{ github.event.inputs.redes }}
+      - name: Lojas no mapa + lojas fechadas (OpenStreetMap) — segundas-feiras
+        continue-on-error: true
+        run: |
+          if [ "$(date +%u)" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then python collector/stores_osm.py; python collector/closed_stores.py; fi
+        env:
+          MAPILLARY_TOKEN: ${{ secrets.MAPILLARY_TOKEN }}
+          GOOGLE_STREETVIEW_KEY: ${{ secrets.GOOGLE_STREETVIEW_KEY }}
+      - run: python collector/build_index.py
+      - name: Commit
+        run: |
+          git config user.name "coletor-precos"
+          git config user.email "actions@users.noreply.github.com"
+          git add site/data collector/state
+          git diff --cached --quiet || git commit -m "Preços $(TZ=America/Sao_Paulo date +%F)"
+          git push
