@@ -5,6 +5,7 @@ on:
       fontes: { description: "Fontes (w=Wayback, c=Common Crawl, a=Arquivo.pt)", default: '["w","c","a"]' }
       redes: { description: "Redes (JSON)", default: '["zaffari","muffato","bistek","giassi","zonasul","prezunic","oba","covabra","savegnago","mambo","supernosso","paguemenos","mercantil","atacadao","bretas"]' }
       minutos: { description: "Tempo de coleta por job (min)", default: "300" }
+      paralelo: { description: "Jobs em paralelo", default: "8" }
   schedule:
     - cron: "0 3 * * 0"   # domingo 00:00 em Brasília: continua de onde parou
 permissions:
@@ -15,7 +16,7 @@ jobs:
     timeout-minutes: 355
     strategy:
       fail-fast: false
-      max-parallel: 10
+      max-parallel: ${{ fromJSON(github.event.inputs.paralelo || '8') }}
       matrix:
         fonte: ${{ fromJSON(github.event.inputs.fontes || '["w","c","a"]') }}
         rede: ${{ fromJSON(github.event.inputs.redes || '["zaffari","muffato","bistek","giassi","zonasul","prezunic","oba","covabra","savegnago","mambo","supernosso","paguemenos","mercantil","atacadao","bretas"]') }}
