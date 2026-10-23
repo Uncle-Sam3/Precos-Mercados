@@ -1,0 +1,13 @@
+name: Sonda de rede (diagnóstico)
+on: workflow_dispatch
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for u in "https://web.archive.org/cdx/search/cdx?url=zonasul.com.br&matchType=domain&showNumPages=true" \
+                   "https://web.archive.org/cdx/search/cdx?url=zonasul.com.br&matchType=domain&limit=5&output=json&filter=statuscode:200" \
+                   "https://web.archive.org/cdx/search/cdx?url=www.zonasul.com.br/*&limit=5&output=json" \
+                   "http://web.archive.org/cdx/search/cdx?url=zonasul.com.br&matchType=domain&limit=3" \
+                   "https://index.commoncrawl.org/CC-MAIN-2023-50-index?url=*.zonasul.com.br&showNumPages=true&output=json"; do
+            echo "== $u"; curl -sS -m 120 -A "Mozilla/5.0 (compatible; PrecosSupermercados/1.0)" -w "\nHTTP %{http_code} %{time_total}s\n" "$u" | head -c 1500; echo; done
