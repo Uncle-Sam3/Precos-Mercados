@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 355
     strategy:
       fail-fast: false
-      max-parallel: 20
+      max-parallel: 10
       matrix:
         fonte: ${{ fromJSON(github.event.inputs.fontes || '["w","c","a"]') }}
         rede: ${{ fromJSON(github.event.inputs.redes || '["zaffari","muffato","bistek","giassi","zonasul","prezunic","oba","covabra","savegnago","mambo","supernosso","paguemenos","mercantil","atacadao","bretas"]') }}

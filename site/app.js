@@ -259,16 +259,18 @@ let CH = {}, cache = {}, cur = null;
 
 // ---- marcadores sob demanda: só com zoom >= MIN_ZOOM_LOJAS e dentro da área visível (+ margem) ----
 const MIN_ZOOM_LOJAS = 10;
-const ALL = [];   // {lat, lon, make() -> L.marker, mk (quando visível)}
+const ALL = [];   // {lat, lon, make() -> L.marker, mk (quando visível), cid}
+let FORCE = null;  // rede escolhida na busca: mostra todas as lojas dela mesmo com zoom baixo
+const STORES = [];
 let refreshT = 0;
 function refreshMarkers() {
   clearTimeout(refreshT);
   refreshT = setTimeout(() => {
     const z = map.getZoom(), show = z >= MIN_ZOOM_LOJAS;
-    $('zhint').hidden = show || !ALL.length;
+    $('zhint').hidden = show || !!FORCE || !ALL.length;
     const b = map.getBounds().pad(0.15), novos = [];
     for (const it of ALL) {
-      const dentro = show && b.contains([it.lat, it.lon]);
+      const dentro = (show || (FORCE && it.cid === FORCE)) && b.contains([it.lat, it.lon]);
       if (dentro && !it.mk) { it.mk = it.make().addTo(map); novos.push(it); }
       else if (!dentro && it.mk) { map.removeLayer(it.mk); it.mk = null; }
     }
@@ -283,7 +285,8 @@ async function init() {
   let n = 0;
   for (const s of stores) {
     const c = CH[s.c]; if (!c || !c.n) continue; n++;
-    ALL.push({lat: s.lat, lon: s.lon, make: () => L.marker([s.lat, s.lon], {icon: mkIcon(c.hist_level), title: `${c.name} — ${s.n}`}).on('click', () => openStore(s))});
+    STORES.push(s); s._k = norm(`${c.name} ${s.n || ''} ${s.a || ''} ${s.ci || ''} ${s.uf || ''}`);
+    ALL.push({lat: s.lat, lon: s.lon, cid: s.c, s, make: () => L.marker([s.lat, s.lon], {icon: mkIcon(c.hist_level), title: `${c.name} — ${s.n}`}).on('click', () => openStore(s))});
   }
   const ok = chains.filter(c => c.n);
   $('stats').textContent = `${n} lojas · ${ok.length} redes · ${ok.reduce((a, c) => a + c.n, 0).toLocaleString('pt-BR')} produtos`;
@@ -425,7 +428,16 @@ async function suggest(q) {
   const L_ = await lugares(); let qn = norm(q).trim(); if (!qn) return [];
   let uf = null; const m = qn.match(/^(.*?)[\s,\/-]+([a-z]{2})$/); if (m) { qn = m[1].trim(); uf = m[2].toUpperCase(); }
   const score = x => (x.k === qn || x.ku === qn ? 0 : x.k.startsWith(qn) ? 1 : 2) * 10 + (x.t === 'Estado' ? 0 : x.cap ? 1 : 2);
-  return L_.filter(x => (!uf || x.uf === uf) && (x.k.includes(qn) || x.ku === qn)).sort((a, b) => score(a) - score(b) || a.k.length - b.k.length).slice(0, 8);
+  const lug = L_.filter(x => (!uf || x.uf === uf) && (x.k.includes(qn) || x.ku === qn)).sort((a, b) => score(a) - score(b) || a.k.length - b.k.length);
+  // mercados: redes e lojas (sem acento; todas as palavras precisam aparecer)
+  const tk = qn.split(/\s+/).filter(Boolean);
+  const redes = Object.values(CH).filter(c => c.n && STORES.some(s => s.c === c.id) && tk.every(t => norm(c.name).includes(t)))
+    .map(c => ({t: 'Rede', n: c.name, cid: c.id, cnt: STORES.filter(s => s.c === c.id).length}));
+  const lojas = STORES.filter(s => (!uf || s.uf === uf) && tk.every(t => s._k.includes(t)))
+    .sort((a, b) => (norm(a.n).startsWith(qn) ? 0 : 1) - (norm(b.n).startsWith(qn) ? 0 : 1)).slice(0, 5)
+    .map(st => ({t: 'Loja', n: `${CH[st.c].name} — ${st.n && norm(st.n) !== norm(CH[st.c].name) ? st.n : (st.a || st.ci || st.n)}`, st, uf: st.uf}));
+  const nl = redes.length || lojas.length ? 4 : 8;
+  return [...redes.slice(0, 2), ...lug.slice(0, nl), ...lojas].slice(0, 10);
 }
 // ---- contorno do lugar + animação de "brotar" das lojas ----
 const GEO = {};
@@ -482,6 +494,23 @@ function sproutNew(list) {
 }
 async function go(x) {
   audioInit();
+  FORCE = null;
+  if (x.t === 'Rede' || x.t === 'Loja') {
+    $('gsug').hidden = true; $('gq').value = x.n;
+    if (outline) { map.removeLayer(outline); outline = null; }
+    if (x.t === 'Rede') {
+      FORCE = x.cid;
+      const pts = STORES.filter(s => s.c === x.cid).map(s => [s.lat, s.lon]);
+      map.once('moveend', () => { collapseGeo(); refreshMarkers(); });
+      if (pts.length === 1) map.flyTo(pts[0], 14, {duration: reduceMotion ? 0 : 1.3});
+      else map.flyToBounds(L.latLngBounds(pts), {padding: [50, 50], maxZoom: 14, duration: reduceMotion ? 0 : 1.3});
+    } else {
+      const st = x.st;
+      map.once('moveend', () => { collapseGeo(); refreshMarkers(); setTimeout(() => openStore(st), 250); });
+      map.flyTo([st.lat, st.lon], Math.max(map.getZoom(), 16), {duration: reduceMotion ? 0 : 1.3});
+    }
+    return;
+  }
   $('gsug').hidden = true; $('gq').value = x.t === 'Estado' ? x.n : `${x.n} - ${x.uf}`;
   let feat = null;
   try {
@@ -500,7 +529,7 @@ async function go(x) {
 }
 function drawSug() {
   const b = $('gsug'); b.hidden = !sugs.length;
-  b.innerHTML = sugs.map((x, i) => `<div data-i="${i}" class="${i === sel ? 'on' : ''}">${esc(x.n)}<small>${x.t === 'Estado' ? 'Estado · ' + x.uf : x.t + ' · ' + x.uf}</small></div>`).join('');
+  b.innerHTML = sugs.map((x, i) => `<div data-i="${i}" class="${i === sel ? 'on' : ''}">${esc(x.n)}<small>${x.t === 'Estado' ? 'Estado · ' + x.uf : x.t === 'Rede' ? `Mercado · rede · ${x.cnt} loja${x.cnt > 1 ? 's' : ''}` : x.t === 'Loja' ? `Mercado · ${esc(x.st.ci || '')}/${x.uf}` : 'Cidade · ' + x.uf}</small></div>`).join('');
   b.querySelectorAll('div').forEach(d => d.onmousedown = e => { e.preventDefault(); go(sugs[+d.dataset.i]); });
 }
 $('gq').addEventListener('input', async () => { sugs = await suggest($('gq').value); sel = -1; drawSug(); });
