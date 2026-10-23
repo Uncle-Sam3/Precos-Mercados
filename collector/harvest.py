@@ -233,6 +233,7 @@ def plan(snaps, cur_slugs, done):
     return out
 
 def run(src, cid):
+    global T0; T0 = time.time()  # orçamento de tempo por rede
     c = BY_ID[cid]; d = store.load(cid)
     cur_slugs = {(v.get("s") or "").lower() for v in d["p"].values() if v.get("s")}
     outf, donef = os.path.join(HIST, f"{src}_{cid}.jsonl"), os.path.join(HIST, f"{src}_{cid}.done")
