@@ -118,3 +118,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .leaflet-control.attr-i:hover{opacity:1}
 #mute{display:flex;align-items:center;justify-content:center}
 .dot.orange{background:#f28c28}
+#zhint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:800;background:rgba(18,18,18,.82);color:#cfd8e6;border:1px solid rgba(47,124,246,.45);border-radius:999px;padding:6px 14px;font-size:12.5px;pointer-events:none;white-space:nowrap}
+#legend .tax{margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08);line-height:1.35}
+@media (max-width:700px){#zhint{bottom:auto;top:76px;font-size:12px;padding:5px 12px}}

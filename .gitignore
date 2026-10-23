@@ -4,3 +4,4 @@ __pycache__/
 *.tmp
 screenshot*.png
 collector/hist/
+collector/ref/geojs-100-mun.json

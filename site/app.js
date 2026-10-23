@@ -113,6 +113,17 @@ let baseLayer = null, baseKey = null, refLayer = null;
 const LBL = Object.assign({ruas: false, bairros: true},  // nomes de ruas ocultos por padrão
   JSON.parse(localStorage.getItem('rotulos') || '{}'));
 const ML_LAYERS = {ruas: ['highway_name_other', 'highway_name_motorway', 'road_oneway', 'road_oneway_opposite'], bairros: ['place_suburb', 'place_other']};
+// rótulos do estilo vetorial só dentro do Brasil (nenhum nome de cidade/rua de país vizinho)
+let BR_SIMPLES = null; fetch('data/geo/brasil-simples.json').then(r => r.json()).then(g => { BR_SIMPLES = g; applyLabels(); });
+function brOnlyLabels(ml) {
+  if (!BR_SIMPLES || ml._brOnly) return;
+  for (const l of ml.getStyle().layers) {
+    if (l.type !== 'symbol') continue;
+    const f = ml.getFilter(l.id), w = ['within', BR_SIMPLES];
+    try { ml.setFilter(l.id, f ? ['all', f, w] : w); } catch (e) { ml.setLayoutProperty(l.id, 'visibility', 'none'); }
+  }
+  ml._brOnly = true;
+}
 function applyLabels() {
   localStorage.setItem('rotulos', JSON.stringify(LBL));
   if (baseKey === 'preto') {
@@ -120,6 +131,7 @@ function applyLabels() {
     if (!ml || !ml.getStyle || !ml.isStyleLoaded()) return;
     for (const [k, ids] of Object.entries(ML_LAYERS)) for (const id of ids)
       if (ml.getLayer(id) && ml.getLayoutProperty(id, 'visibility') !== (LBL[k] ? 'visible' : 'none')) ml.setLayoutProperty(id, 'visibility', LBL[k] ? 'visible' : 'none');
+    brOnlyLabels(ml);
     for (const id of ['place_country_other', 'place_country_minor', 'place_country_major'])  // sem nome de país ("Brazil")
       if (ml.getLayer(id) && ml.getLayoutProperty(id, 'visibility') !== 'none') ml.setLayoutProperty(id, 'visibility', 'none');
     for (const id of ['highway_name_other', 'highway_name_motorway'])  // nomes de ruas em amarelo para leitura
@@ -129,7 +141,7 @@ function applyLabels() {
   } else if (baseKey === 'cinza') {
     const on = LBL.ruas || LBL.bairros;
     if (on && !refLayer) refLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
-      {maxZoom: 16, pane: 'labels', attribution: 'Rótulos &copy; Esri'}).addTo(map);
+      {maxZoom: 16, minZoom: 6, pane: 'labels', attribution: 'Rótulos &copy; Esri'}).addTo(map);
     if (!on && refLayer) { map.removeLayer(refLayer); refLayer = null; }
   }
 }
@@ -170,40 +182,71 @@ map.attributionControl.setPrefix(false);
 map.createPane('mask'); map.getPane('mask').style.zIndex = 350; map.getPane('mask').style.pointerEvents = 'none';
 map.createPane('labels'); map.getPane('labels').style.zIndex = 300; map.getPane('labels').style.pointerEvents = 'none';  // rótulos Esri: abaixo da máscara
 // máscara: cobre tudo fora do Brasil (limites IBGE) em todos os estilos — some países vizinhos e seus rótulos
-const maskRenderer = L.svg({pane: 'mask', padding: 1.5});
-fetch('data/geo/mascara.json').then(r => r.json()).then(g => {
-  const maskLayer = L.geoJSON(g, {renderer: maskRenderer, interactive: false,
-    style: {stroke: true, color: '#2f7cf6', weight: 1, opacity: 0.35, fillColor: 'url(#pontilhado)', fillOpacity: 1}}).addTo(map);
-  // textura pontilhada (fundo #1a1a1a + pontos brancos 16%) só fora do Brasil; acompanha o mapa ao arrastar
-  const svg = maskRenderer._container, NS = 'http://www.w3.org/2000/svg';
-  if (svg && !svg.querySelector('#pontilhado')) {
-    const defs = document.createElementNS(NS, 'defs');
-    defs.innerHTML = `<pattern id="pontilhado" patternUnits="userSpaceOnUse" width="22" height="22"><rect width="22" height="22" fill="#1a1a1a"/><circle cx="11" cy="11" r="1.4" fill="rgba(255,255,255,0.16)"/></pattern>
-      <filter id="sombra-brasil" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
-        <feComponentTransfer in="SourceAlpha" result="inv"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer>
-        <feOffset in="inv" dx="6" dy="7" result="off"/><feGaussianBlur in="off" stdDeviation="7" result="blur"/>
-        <feComposite in="blur" in2="SourceAlpha" operator="in" result="sh"/>
-        <feFlood flood-color="#000" flood-opacity="0.65"/><feComposite in2="sh" operator="in" result="sombra"/>
-        <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sombra"/></feMerge>
-      </filter>`;
-    svg.insertBefore(defs, svg.firstChild);
+const maskRenderer = L.svg({pane: 'mask', padding: 0.6});
+// Baixa resolução (zoom < 8): data/geo/mascara.json. Alta resolução (zoom >= 8): células de 2° com o contorno IBGE
+// em resolução cheia (ilhas incluídas) — só as células da área visível são baixadas (data/geo/cel/*.json).
+const MASK_HI_ZOOM = 8, NS = 'http://www.w3.org/2000/svg';
+const MASK_STYLE_LO = {stroke: true, color: '#2f7cf6', weight: 1, opacity: 0.35, fillColor: 'url(#pontilhado)', fillOpacity: 1};
+const MASK_STYLE_HI = {stroke: false, fillColor: 'url(#pontilhado)', fillOpacity: 1};
+const CLIP_STYLE = {stroke: false, fill: false};
+const maskFora = L.geoJSON(null, {renderer: maskRenderer, interactive: false}).addTo(map);   // fora do Brasil (pontilhado)
+const maskDentro = L.geoJSON(null, {renderer: maskRenderer, interactive: false, style: CLIP_STYLE}).addTo(map); // Brasil (recorte)
+const GEOC = {}; let maskKey = '', LO = null, CELIDX = null;
+const getJ = u => GEOC[u] ||= fetch(u).then(r => r.json());
+function maskDefs() {
+  const svg = maskRenderer._container; if (!svg || svg.querySelector('#pontilhado')) return;
+  const defs = document.createElementNS(NS, 'defs');
+  defs.innerHTML = `<pattern id="pontilhado" patternUnits="userSpaceOnUse" width="22" height="22"><rect width="22" height="22" fill="#1a1a1a"/><circle cx="11" cy="11" r="1.4" fill="rgba(255,255,255,0.16)"/></pattern>
+    <filter id="sombra-brasil" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feComponentTransfer in="SourceAlpha" result="inv"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer>
+      <feOffset in="inv" dx="6" dy="7" result="off"/><feGaussianBlur in="off" stdDeviation="7" result="blur"/>
+      <feComposite in="blur" in2="SourceAlpha" operator="in" result="sh"/>
+      <feFlood flood-color="#000" flood-opacity="0.65"/><feComposite in2="sh" operator="in" result="sombra"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sombra"/></feMerge>
+    </filter>
+    <clipPath id="recorte-brasil" clipPathUnits="userSpaceOnUse"><path d="M0 0"/></clipPath>`;
+  svg.insertBefore(defs, svg.firstChild);
+  // sombra do Brasil sobre o pontilhado: aplicada ao grupo inteiro (sem emendas entre células)
+  const gEl = svg.querySelector('g'); if (gEl) gEl.setAttribute('filter', 'url(#sombra-brasil)');
+}
+// recorta tiles raster, canvas MapLibre e rótulos no contorno do Brasil: nada de outro país aparece nem ao arrastar
+function syncClip() {
+  const cpp = maskRenderer._container && maskRenderer._container.querySelector('#recorte-brasil path'); if (!cpp) return;
+  let d = ''; maskDentro.eachLayer(l => { if (l._path) d += l._path.getAttribute('d') || ''; });
+  cpp.setAttribute('d', d || 'M0 0');
+  for (const pn of ['tilePane', 'labels']) { const el = map.getPane(pn); if (el) el.style.clipPath = 'url(#recorte-brasil)'; }
+}
+const holesOf = g => (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).flatMap(p => p.slice(1).map(r => [r]));
+async function updateMask() {
+  const z = map.getZoom();
+  if (z < MASK_HI_ZOOM) {
+    if (maskKey === 'lo') return;
+    LO ||= await getJ('data/geo/mascara.json');
+    if (map.getZoom() >= MASK_HI_ZOOM) return;
+    maskKey = 'lo'; maskFora.clearLayers(); maskDentro.clearLayers();
+    maskFora.options.style = MASK_STYLE_LO; maskFora.addData(LO);
+    maskDentro.addData({type: 'MultiPolygon', coordinates: holesOf(LO)});
+  } else {
+    CELIDX ||= await getJ('data/geo/cel/indice.json');
+    const b = map.getBounds().pad(0.7), cells = [];
+    for (let x = Math.floor(b.getWest() / 2) * 2; x < b.getEast(); x += 2)
+      for (let y = Math.floor(b.getSouth() / 2) * 2; y < b.getNorth(); y += 2) cells.push([x, y]);
+    const key = cells.map(c => c.join('_')).join(',');
+    if (key === maskKey) return;
+    const parts = await Promise.all(cells.map(async ([x, y]) => {
+      const t = CELIDX[`${x}_${y}`] ?? 0, bx = {type: 'Polygon', coordinates: [[[x, y], [x + 2, y], [x + 2, y + 2], [x, y + 2], [x, y]]]};
+      if (t === 2) { const c = await getJ(`data/geo/cel/${x}_${y}.json`); return [c.f, c.d]; }
+      return t === 1 ? [null, bx] : [bx, null];
+    }));
+    if (map.getZoom() < MASK_HI_ZOOM) return;
+    maskKey = key; maskFora.clearLayers(); maskDentro.clearLayers(); maskFora.options.style = MASK_STYLE_HI;
+    for (const [f, d] of parts) { if (f && f.coordinates.length) maskFora.addData(f); if (d && d.coordinates.length) maskDentro.addData(d); }
   }
-  // sombra do Brasil projetada sobre o fundo pontilhado (sombra interna da máscara, só fora do Brasil)
-  maskLayer.eachLayer(l => l._path && l._path.setAttribute('filter', 'url(#sombra-brasil)'));
-  // 2ª proteção: recorta os mapas base (tiles raster, canvas MapLibre e rótulos) no contorno do Brasil.
-  // Assim nada de outros países aparece nem durante arrasto/zoom antes de a máscara ser redesenhada.
-  const rings = (g.features ? g.features[0].geometry : g.geometry || g).coordinates.slice(1);
-  const brLayer = L.geoJSON({type: 'MultiPolygon', coordinates: rings.map(r => [r])}, {renderer: maskRenderer, interactive: false,
-    style: {stroke: false, fill: false}}).addTo(map);
-  const cp = document.createElementNS(NS, 'clipPath'); cp.id = 'recorte-brasil'; cp.setAttribute('clipPathUnits', 'userSpaceOnUse');
-  const cpp = document.createElementNS(NS, 'path'); cp.appendChild(cpp); svg.querySelector('defs').appendChild(cp);
-  const sync = () => {
-    let d = ''; brLayer.eachLayer(l => { if (l._path) d += l._path.getAttribute('d') || ''; });
-    cpp.setAttribute('d', d || 'M0 0');
-    for (const pn of ['tilePane', 'labels']) { const el = map.getPane(pn); if (el) el.style.clipPath = 'url(#recorte-brasil)'; }
-  };
-  maskRenderer.on('update', () => setTimeout(sync, 0)); map.on('zoomend moveend viewreset', () => setTimeout(sync, 0)); sync();
-});
+  maskDefs(); syncClip();
+}
+maskRenderer.on('update', () => setTimeout(syncClip, 0));
+map.on('zoomend moveend viewreset', () => { updateMask(); setTimeout(syncClip, 0); });
+updateMask();
 setBasemap(localStorage.getItem('mapa') || BASEMAP_PADRAO);
 $('bmenu').innerHTML = Object.entries(BASEMAPS).map(([k, b]) => `<button class="opt${k === baseKey ? ' on' : ''}" data-k="${k}"><img src="${b.thumb}" alt=""><span>${b.nome}</span></button>`).join('');
 $('bmenu').querySelectorAll('.opt').forEach(o => o.onclick = () => { setBasemap(o.dataset.k); $('bmenu').hidden = true; });
@@ -212,7 +255,27 @@ $('lbtn').onclick = e => { e.stopPropagation(); $('bmenu').hidden = true; $('lme
 drawLabelUI();
 map.on('click', () => { $('bmenu').hidden = true; $('lmenu').hidden = true; });
 
-let CH = {}, cache = {}, cur = null; const MARKERS = [];
+let CH = {}, cache = {}, cur = null;
+
+// ---- marcadores sob demanda: só com zoom >= MIN_ZOOM_LOJAS e dentro da área visível (+ margem) ----
+const MIN_ZOOM_LOJAS = 10;
+const ALL = [];   // {lat, lon, make() -> L.marker, mk (quando visível)}
+let refreshT = 0;
+function refreshMarkers() {
+  clearTimeout(refreshT);
+  refreshT = setTimeout(() => {
+    const z = map.getZoom(), show = z >= MIN_ZOOM_LOJAS;
+    $('zhint').hidden = show || !ALL.length;
+    const b = map.getBounds().pad(0.15), novos = [];
+    for (const it of ALL) {
+      const dentro = show && b.contains([it.lat, it.lon]);
+      if (dentro && !it.mk) { it.mk = it.make().addTo(map); novos.push(it); }
+      else if (!dentro && it.mk) { map.removeLayer(it.mk); it.mk = null; }
+    }
+    sproutNew(novos);
+  }, 150);
+}
+map.on('moveend zoomend', refreshMarkers);
 
 async function init() {
   const [chains, stores] = await Promise.all([fetch('data/chains.json').then(r => r.json()), fetch('data/stores.json').then(r => r.json())]);
@@ -220,21 +283,17 @@ async function init() {
   let n = 0;
   for (const s of stores) {
     const c = CH[s.c]; if (!c || !c.n) continue; n++;
-    const mk = L.marker([s.lat, s.lon], {icon: mkIcon(c.hist_level), title: `${c.name} — ${s.n}`}).addTo(map).on('click', () => openStore(s));
-    MARKERS.push({marker: mk, lat: s.lat, lon: s.lon});
+    ALL.push({lat: s.lat, lon: s.lon, make: () => L.marker([s.lat, s.lon], {icon: mkIcon(c.hist_level), title: `${c.name} — ${s.n}`}).on('click', () => openStore(s))});
   }
-  try {
-    const closed = await fetch('data/closed.json').then(r => r.ok ? r.json() : []);
-    for (const c of closed) MARKERS.push({lat: c.lat, lon: c.lon, marker: L.marker([c.lat, c.lon], {icon: closedIcon}).addTo(map)
-      .bindTooltip(c.ano ? `Fechado em ${c.ano}` : 'Fechado (ano não informado)', {direction: 'top', offset: [0, -14]}).on('click', () => openClosed(c))});
-  } catch (e) {}
-  try {
-    const rj = await fetch('data/rj.json').then(r => r.ok ? r.json() : []);
-    for (const c of rj) MARKERS.push({lat: c.lat, lon: c.lon, marker: L.marker([c.lat, c.lon], {icon: mkIcon('rj')}).addTo(map)
-      .bindTooltip(`${c.rede} — em recuperação judicial`, {direction: 'top', offset: [0, -14]}).on('click', () => openRJ(c))});
-  } catch (e) {}
   const ok = chains.filter(c => c.n);
   $('stats').textContent = `${n} lojas · ${ok.length} redes · ${ok.reduce((a, c) => a + c.n, 0).toLocaleString('pt-BR')} produtos`;
+  refreshMarkers();
+  const [closed, rj] = await Promise.all(['data/closed.json', 'data/rj.json'].map(u => fetch(u).then(r => r.ok ? r.json() : []).catch(() => [])));
+  for (const c of closed) ALL.push({lat: c.lat, lon: c.lon, make: () => L.marker([c.lat, c.lon], {icon: closedIcon})
+    .bindTooltip(c.ano ? `Fechado em ${c.ano}` : 'Fechado (ano não informado)', {direction: 'top', offset: [0, -14]}).on('click', () => openClosed(c))});
+  for (const c of rj) ALL.push({lat: c.lat, lon: c.lon, make: () => L.marker([c.lat, c.lon], {icon: mkIcon('rj')})
+    .bindTooltip(`${c.rede} — em recuperação judicial`, {direction: 'top', offset: [0, -14]}).on('click', () => openRJ(c))});
+  refreshMarkers();
 }
 
 async function loadChain(id) {
@@ -249,11 +308,17 @@ async function loadChain(id) {
   return cache[id];
 }
 
+// uma janela de loja por vez: abrir qualquer loja fecha as anteriores; Esc ou clique no mapa vazio fecham
+function closeAll() { $('panel').classList.add('hidden'); $('closed').classList.add('hidden'); cur = null; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.activeElement !== $('gq')) closeAll(); });
+map.on('click', closeAll);
 function openStore(s) {
+  closeAll();
   const c = CH[s.c]; cur = s;
   $('panel').classList.remove('hidden');
   $('pt').textContent = `${c.name}`;
-  $('ps').innerHTML = `${esc(s.n)}${s.a ? ' · ' + esc(s.a) : ''}${s.ci ? ' · ' + esc(s.ci) : ''}${s.uf ? '/' + s.uf : ''}<br>
+  $('ps').innerHTML = `${esc(s.n)}${s.a ? ' · ' + esc(s.a) : (s.ci ? ' · ' + esc(s.ci) + (s.uf ? '/' + s.uf : '') : '')}
+    ${s.url ? ` · <a href="${esc(s.url)}" target="_blank" rel="noopener">Ver no site da loja</a>` : ''}<br>
     Preços do site <a href="${c.site}" target="_blank" rel="noopener">${esc(c.site.replace('https://', ''))}</a> · atualizado em ${fmtDate(c.updated)}
     ${c.oldest ? ' · histórico desde ' + fmtDate(c.oldest) : ''}`;
   $('q').value = ''; $('results').innerHTML = '';
@@ -261,6 +326,7 @@ function openStore(s) {
   loadChain(s.c); // pré-carrega
 }
 function openClosed(c) {
+  closeAll();
   const f = c.foto;
   $('cphoto').innerHTML = f ? `<img src="${esc(f.url)}" alt="Foto do local">
     <div class="cred">${f.data ? 'Foto de ' + esc(f.data) + ' · ' : ''}${f.aviso ? esc(f.aviso) + ' · ' : ''}<a href="${esc(f.link || f.url)}" target="_blank" rel="noopener">${esc(f.credito)}</a></div>`
@@ -280,6 +346,7 @@ function photoBox(f) {
 }
 const hostOf = u => { try { return new URL(u).hostname.replace('www.', ''); } catch (e) { return 'link'; } };
 function openRJ(c) {
+  closeAll();
   $('cphoto').innerHTML = photoBox(c.foto);
   $('cinfo').innerHTML = `<h3 style="color:#f2a050">Em recuperação judicial</h3><div class="nm">${esc(c.rede)} — ${esc(c.n)}</div>
     <div class="loc">${esc(c.ci || '')}${c.uf ? ' - ' + c.uf : ''} · pedido em ${c.ano}</div>
@@ -400,15 +467,17 @@ drawMute();
 // legenda (ajuda "?")
 $('help').onclick = e => { e.stopPropagation(); $('legend').hidden = !$('legend').hidden; };
 document.addEventListener('click', e => { if (!$('legend').hidden && !$('legend').contains(e.target) && e.target !== $('help')) $('legend').hidden = true; });
-function sprout(feature) {
+function sproutNew(list) {
+  if (!list.length) return;
   SND.burst = 0;
-  const inside = MARKERS.filter(m => feature ? inGeom([m.lon, m.lat], feature.geometry) : map.getBounds().contains([m.lat, m.lon]));
-  inside.forEach((m, i) => {
-    const el = m.marker.getElement(); if (!el) return;
-    el.classList.remove('sprout'); void el.offsetWidth;
-    const delay = reduceMotion ? 0 : Math.min(i * 35, 600);
+  const c = map.getCenter();
+  list.sort((p, q) => ((p.lat - c.lat) ** 2 + (p.lon - c.lng) ** 2) - ((q.lat - c.lat) ** 2 + (q.lon - c.lng) ** 2));
+  list.forEach((m, i) => {
+    const el = m.mk && m.mk.getElement(); if (!el) return;
+    if (reduceMotion || i >= 40) return;          // anima no máx. 40 por vez; o resto aparece direto
+    const delay = Math.min(i * 35, 600);
     el.style.setProperty('--d', `${delay}ms`); el.classList.add('sprout');
-    setTimeout(pop, delay + 60);
+    if (i < 8) setTimeout(pop, delay + 60);       // som: no máx. 8 por leva (pop() também limita a 1 a cada 40 ms)
   });
 }
 async function go(x) {
@@ -425,7 +494,7 @@ async function go(x) {
     outline = L.geoJSON(feat, {interactive: false, style: {color: '#3b8cff', weight: 2.5, opacity: 0.95, fill: true, fillColor: '#2f7cf6', fillOpacity: 0.06, className: 'outline-glow'}}).addTo(map);
     bounds = outline.getBounds();
   } else if (x.bb) bounds = L.latLngBounds([x.bb[0], x.bb[1]], [x.bb[2], x.bb[3]]);
-  const done = () => { sprout(feat); collapseGeo(); };
+  const done = () => { collapseGeo(); };
   if (bounds) { map.once('moveend', done); map.flyToBounds(bounds, {padding: [40, 40], duration: reduceMotion ? 0 : 1.3}); }
   else { map.once('moveend', done); map.flyTo([x.la, x.lo], 12, {duration: reduceMotion ? 0 : 1.3}); }
 }

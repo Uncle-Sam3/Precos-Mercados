@@ -19,6 +19,7 @@
   </form>
   <button id="help" type="button" title="Legenda">?</button>
   <button id="mute" type="button"></button>
+  <div id="zhint" hidden>Aproxime o zoom para ver os mercados</div>
   <div id="bswitch"><div id="bmenu" hidden></div>
     <div id="lmenu" hidden></div>
     <button id="lbtn" type="button" title="Mostrar/ocultar nomes"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M4 6h16M12 6v13M8 19h8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></button>
@@ -31,7 +32,8 @@
     <div class="lg"><span class="dot blue"></span> Histórico completo <small>(≥50% dos produtos com preço de anos anteriores, em ≥2 anos)</small></div>
     <div class="lg"><span class="dot orange"></span> Em recuperação judicial <small>(dívida e situação com fonte)</small></div>
     <div class="lg"><span class="dot gray">✕</span> Fechado <small>(ano e motivo com fonte)</small></div>
-    <div class="lg small">Clique no ícone da loja para pesquisar produtos.</div>
+    <div class="lg small">Clique no ícone da loja para pesquisar produtos. Os mercados aparecem ao aproximar o zoom.</div>
+    <div class="lg small tax"><b>Impostos:</b> os valores são estimativas, como no rodapé do cupom fiscal, calculadas pela tabela oficial do IBPT (Lei da Transparência Fiscal, 12.741/2012) a partir do código fiscal (NCM) de cada produto e do estado da loja, divididos em federal, estadual e municipal. Quando o produto não tem NCM informado, aparece "Imposto não disponível".</div>
   </div>
   <div id="closed" class="hidden">
     <div class="cbox" id="cphoto"></div>
