@@ -1,0 +1,58 @@
+name: Histórico de preços (arquivos da web)
+on:
+  workflow_dispatch:
+    inputs:
+      fontes: { description: "Fontes (w=Wayback, c=Common Crawl, a=Arquivo.pt)", default: '["w","c","a"]' }
+      redes: { description: "Redes (JSON)", default: '["zaffari","muffato","bistek","giassi","zonasul","prezunic","oba","covabra","savegnago","mambo","supernosso","paguemenos","mercantil","atacadao","bretas"]' }
+      minutos: { description: "Tempo de coleta por job (min)", default: "300" }
+  schedule:
+    - cron: "0 3 * * 0"   # domingo 00:00 em Brasília: continua de onde parou
+permissions:
+  contents: write
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        fonte: ${{ fromJSON(github.event.inputs.fontes || '["w","c","a"]') }}
+        rede: ${{ fromJSON(github.event.inputs.redes || '["zaffari","muffato","bistek","giassi","zonasul","prezunic","oba","covabra","savegnago","mambo","supernosso","paguemenos","mercantil","atacadao","bretas"]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - uses: actions/cache/restore@v4
+        with: { path: collector/hist, key: "hist-${{ matrix.fonte }}-${{ matrix.rede }}-${{ github.run_id }}", restore-keys: "hist-${{ matrix.fonte }}-${{ matrix.rede }}-" }
+      - name: Coleta
+        continue-on-error: true
+        run: BUDGET_MIN=${{ github.event.inputs.minutos || '300' }} WORKERS=3 RPS_W=1.0 python collector/harvest.py ${{ matrix.fonte }} ${{ matrix.rede }}
+      - uses: actions/cache/save@v4
+        if: always()
+        with: { path: collector/hist, key: "hist-${{ matrix.fonte }}-${{ matrix.rede }}-${{ github.run_id }}" }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "hist-${{ matrix.fonte }}-${{ matrix.rede }}", path: "collector/hist/*.jsonl", if-no-files-found: ignore, retention-days: 30 }
+  juntar:
+    needs: coletar
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - uses: actions/download-artifact@v4
+        with: { path: /tmp/hist, pattern: "hist-*" }
+      - name: Juntar e publicar (com nova tentativa se main mudou)
+        run: |
+          git config user.name "coletor-precos"; git config user.email "actions@users.noreply.github.com"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main && git reset -q --hard origin/main
+            python collector/merge_hist.py /tmp/hist && python collector/build_index.py
+            git add site/data; git diff --cached --quiet && break
+            git commit -qm "Histórico de preços (arquivos da web) $(TZ=America/Sao_Paulo date +%F)"
+            git push -q origin HEAD:main && break; sleep 20
+          done

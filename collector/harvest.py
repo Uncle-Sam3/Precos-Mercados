@@ -201,14 +201,17 @@ def plan(snaps, cur_slugs, done):
         g = k if k != 1 else (1 if slug_of(u) in cur_slugs else 2)
         if k == 2: g = 3
         groups[g][s["ts"][:4]].append(s)
-    out = []
-    for g in sorted(groups):
-        yrs = {y: sorted(v, key=lambda x: x["ts"]) for y, v in groups[g].items()}
-        if g == 3:  # páginas genéricas: no máx. 1 por URL por trimestre e limita volume
-            for y in yrs: yrs[y] = yrs[y][:4000]
-        while any(yrs.values()):
-            for y in sorted(yrs):
-                if yrs[y]: out.append(yrs[y].pop(0))
+    byyear = collections.defaultdict(list)
+    for g in groups:
+        for y, v in groups[g].items():
+            v = sorted(v, key=lambda x: x["ts"])
+            if g == 3: v = v[:4000]
+            byyear[y] += [(g, x["ts"], x) for x in v]
+    for y in byyear: byyear[y].sort(key=lambda t: (t[0], t[1]))
+    out, ys = [], sorted(byyear)
+    while any(byyear[y] for y in ys):  # intercala anos (todos os anos avançam juntos)
+        for y in ys:
+            if byyear[y]: out.append(byyear[y].pop(0)[2])
     return out
 
 def run(src, cid):
