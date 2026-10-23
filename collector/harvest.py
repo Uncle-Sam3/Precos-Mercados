@@ -38,9 +38,11 @@ def get(url, kind, tries=6, timeout=90, **kw):
             if r.status_code in (200, 206): RATE[kind].pen = max(0, RATE[kind].pen - 0.05); return r
             if r.status_code in (429, 500, 502, 503, 504, 520, 522, 524):
                 RATE[kind].pen = min(5, RATE[kind].pen + 0.5); time.sleep(min(120, 10 * 2 ** a) * random.uniform(.7, 1.3)); continue
+            if kind == 'cdx': print(f'   HTTP {r.status_code} {url[:90]}', flush=True)
             return None
         except requests.TooManyRedirects: return None
         except requests.RequestException as e:
+            if kind == 'cdx': print(f'   rede: {type(e).__name__} {url[:90]}', flush=True)
             time.sleep(min(90, 5 * 2 ** a) * random.uniform(.7, 1.3))
     return None
 
@@ -56,17 +58,33 @@ def list_w(dom):
     base = {"url": dom, "matchType": "domain", "output": "json", "fl": "timestamp,original,mimetype",
             "filter": ["statuscode:200", "mimetype:(text/html|application/json|text/plain|application/javascript)"]}
     r = get("https://web.archive.org/cdx/search/cdx", "cdx", params={**base, "showNumPages": "true"}, timeout=180)
+    print(f"  wayback {dom}: showNumPages -> {getattr(r, 'status_code', None)} {(r.text[:80] if r is not None else '').strip()!r}", flush=True)
     try: n = int(r.text.strip()) if r is not None else 0
     except ValueError: n = 0
-    print(f"  wayback {dom}: {n} páginas CDX", flush=True)
-    for pg in range(n):
-        if left() < BUDGET * 0.45: print("  (listagem interrompida por tempo)", flush=True); break
-        r = get("https://web.archive.org/cdx/search/cdx", "cdx", params={**base, "page": str(pg)}, timeout=300)
-        if r is None: continue
+    if n:
+        for pg in range(n):
+            if left() < BUDGET * 0.45: print("  (listagem interrompida por tempo)", flush=True); break
+            r = get("https://web.archive.org/cdx/search/cdx", "cdx", params={**base, "page": str(pg)}, timeout=300)
+            if r is None: continue
+            try: rows = r.json()
+            except Exception: continue
+            for x in rows[1:]:
+                if len(x) >= 2 and not STATIC.search(x[1]): yield dict(ts=x[0], url=x[1])
+        return
+    # alternativa: paginação por resumeKey
+    resume = None
+    while left() > BUDGET * 0.45:
+        q = {**base, "limit": "50000", "showResumeKey": "true"}
+        if resume: q["resumeKey"] = resume
+        r = get("https://web.archive.org/cdx/search/cdx", "cdx", params=q, timeout=300)
+        if r is None: print(f"  wayback {dom}: falha na listagem", flush=True); break
         try: rows = r.json()
-        except Exception: continue
-        for x in rows[1:]:
+        except Exception: print(f"  wayback {dom}: resposta inválida {r.text[:120]!r}", flush=True); break
+        rows = rows[1:] if rows else []; resume = None
+        if len(rows) >= 2 and rows[-2] == []: resume = rows[-1][0]; rows = rows[:-2]
+        for x in rows:
             if len(x) >= 2 and not STATIC.search(x[1]): yield dict(ts=x[0], url=x[1])
+        if not resume: break
 _CC = None
 def list_c(dom):
     global _CC
