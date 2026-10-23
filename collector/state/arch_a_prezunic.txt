@@ -90,3 +90,15 @@
 20230728143449|https://www.prezunic.com.br/cerveja-baden-baden-trigo-ale-golden-600ml/p
 20230728143455|https://www.prezunic.com.br/cerveja-heineken-puro-malte-latao-473ml/p
 20230728143501|https://www.prezunic.com.br/cerveja-imperio-puro-malte-lata-473ml/p
+20230728143507|https://www.prezunic.com.br/cerveja-heineken-lager-premium-puro-malte-lata-350ml/p
+20230728143513|https://www.prezunic.com.br/cerveja-antarctica-subzero-pilsen-latao-473ml/p
+20230728143520|https://www.prezunic.com.br/cerveja-baden-baden-pilsen-cristal-lata-350ml/p
+20230728143526|https://www.prezunic.com.br/cafe-pilao-almofada-500g/p
+20230728143532|https://www.prezunic.com.br/feijao-preto-super-maximo-tipo1-1kg/p
+20230728143537|https://www.prezunic.com.br/acucar-refinado-uniao-1kg/p
+20230728143542|https://www.prezunic.com.br/arroz-branco-camil-tipo1-5kg/p
+20230728143547|https://www.prezunic.com.br/azeite-de-oliva-extra-virgem-andorinha-vidro-500ml/p
+20230728143552|https://www.prezunic.com.br/milho-verde-predilecta-lata-170g/p
+20230728143558|https://www.prezunic.com.br/molho-de-tomate-stella-doro-tradicional-sache-300g/p
+20230728143604|https://www.prezunic.com.br/sal-refinado-prezunic-1kg/p
+20230728143611|https://www.prezunic.com.br/sal-refinado-cisne-extra-ovo-100g/p
