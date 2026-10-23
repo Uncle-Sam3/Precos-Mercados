@@ -168,8 +168,9 @@ map.attributionControl.setPrefix(false);
     L.DomEvent.on(b, 'click', e => { L.DomEvent.stop(e); el.classList.toggle('open'); }); return b; }});
   new C().addTo(map); })();
 map.createPane('mask'); map.getPane('mask').style.zIndex = 350; map.getPane('mask').style.pointerEvents = 'none';
+map.createPane('labels'); map.getPane('labels').style.zIndex = 300; map.getPane('labels').style.pointerEvents = 'none';  // rótulos Esri: abaixo da máscara
 // máscara: cobre tudo fora do Brasil (limites IBGE) em todos os estilos — some países vizinhos e seus rótulos
-const maskRenderer = L.svg({pane: 'mask', padding: 1});
+const maskRenderer = L.svg({pane: 'mask', padding: 1.5});
 fetch('data/geo/mascara.json').then(r => r.json()).then(g => {
   const maskLayer = L.geoJSON(g, {renderer: maskRenderer, interactive: false,
     style: {stroke: true, color: '#2f7cf6', weight: 1, opacity: 0.35, fillColor: 'url(#pontilhado)', fillOpacity: 1}}).addTo(map);
@@ -189,6 +190,19 @@ fetch('data/geo/mascara.json').then(r => r.json()).then(g => {
   }
   // sombra do Brasil projetada sobre o fundo pontilhado (sombra interna da máscara, só fora do Brasil)
   maskLayer.eachLayer(l => l._path && l._path.setAttribute('filter', 'url(#sombra-brasil)'));
+  // 2ª proteção: recorta os mapas base (tiles raster, canvas MapLibre e rótulos) no contorno do Brasil.
+  // Assim nada de outros países aparece nem durante arrasto/zoom antes de a máscara ser redesenhada.
+  const rings = (g.features ? g.features[0].geometry : g.geometry || g).coordinates.slice(1);
+  const brLayer = L.geoJSON({type: 'MultiPolygon', coordinates: rings.map(r => [r])}, {renderer: maskRenderer, interactive: false,
+    style: {stroke: false, fill: false}}).addTo(map);
+  const cp = document.createElementNS(NS, 'clipPath'); cp.id = 'recorte-brasil'; cp.setAttribute('clipPathUnits', 'userSpaceOnUse');
+  const cpp = document.createElementNS(NS, 'path'); cp.appendChild(cpp); svg.querySelector('defs').appendChild(cp);
+  const sync = () => {
+    let d = ''; brLayer.eachLayer(l => { if (l._path) d += l._path.getAttribute('d') || ''; });
+    cpp.setAttribute('d', d || 'M0 0');
+    for (const pn of ['tilePane', 'labels']) { const el = map.getPane(pn); if (el) el.style.clipPath = 'url(#recorte-brasil)'; }
+  };
+  maskRenderer.on('update', () => setTimeout(sync, 0)); map.on('zoomend moveend viewreset', () => setTimeout(sync, 0)); sync();
 });
 setBasemap(localStorage.getItem('mapa') || BASEMAP_PADRAO);
 $('bmenu').innerHTML = Object.entries(BASEMAPS).map(([k, b]) => `<button class="opt${k === baseKey ? ' on' : ''}" data-k="${k}"><img src="${b.thumb}" alt=""><span>${b.nome}</span></button>`).join('');
