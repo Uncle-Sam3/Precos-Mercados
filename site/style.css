@@ -135,14 +135,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .hist .row .pr{display:flex;flex-direction:column;align-items:center;text-align:center}
 .row .pr .meta{color:#9a9a9a}
 
-/* 2ª linha do painel: busca de produto/marca (largura toda; aceita tamanho no texto) */
 #sform{padding-bottom:6px}
 #sform #sbtn{width:76px;flex:none;padding:0}
-#pform{display:flex;padding:0 14px 10px}
-#pq{flex:1;min-width:0;background:#121212;border:1px solid #3a3a3a;color:#eee;border-radius:8px;padding:8px 10px;font-size:13.5px}
-#pq::placeholder{color:#8a8a8a}
 #q{min-width:0}
-@media (max-width:480px){#sform,#pform,#phint{padding-left:8px;padding-right:8px}#sform #sbtn{width:62px}}
+@media (max-width:480px){#sform,#phint{padding-left:8px;padding-right:8px}#sform #sbtn{width:62px}}
 .term .fnote,.fnote{font-size:11px;color:#7fb0ff;margin:2px 4px 6px}
 #phint{font-size:10.5px;color:#8a8a8a;padding:0 14px 8px;margin-top:-5px;line-height:1.3}#phint b{color:#b9c6da;font-weight:500}
 /* assistente de escrita (autocompletar) */
@@ -156,3 +152,4 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 #acbox .aci.on{background:#2f7cf6;color:#fff}#acbox .aci.on small{color:#dce8ff}
 @media (max-width:480px){#acbox .aci{padding:9px 10px;font-size:13.5px}}
 #acbox .aci .act i{font-style:normal;color:#999}#acbox .aci.on .act i{color:#dce8ff}
+.card .t .tam{text-transform:none;color:#9ec2ff;font-weight:600}

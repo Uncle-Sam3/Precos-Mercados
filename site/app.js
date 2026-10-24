@@ -66,7 +66,16 @@ const wordRe = t => new RegExp('(^|[^a-z0-9])' + t.replace(/[.*+?^${}()|[\]\\]/g
 function searchTerm(list, q) {
   const toks = norm(q).split(/\s+/).filter(Boolean); if (!toks.length) return {hits: [], core: []};
   const res = toks.map(wordRe), qn = toks.join(' ');
-  const hits = list.filter(p => { const n = norm(p.n); return res.every(r => r.test(n)); });
+  // nome; produtos que só casam com nome+marca (ex.: "monster", "red bull", "café melitta") entram quando o termo é mesmo uma marca:
+  // nenhum nome casa, ou ao menos metade dos que casam pelo nome também são dessa marca (assim "banana" não puxa a marca "Banana Brasil").
+  // Se nada casar, tenta também a categoria do site.
+  const byName = [], byBrand = []; let nameAlsoBrand = 0;
+  for (const p of list) {
+    const n = norm(p.n), okN = res.every(r => r.test(n)), okB = !!p.b && res.every(r => r.test(n + ' ' + norm(p.b)));
+    if (okN) { byName.push(p); if (p.b && res.some(r => r.test(norm(p.b)))) nameAlsoBrand++; } else if (okB) byBrand.push(p);
+  }
+  let hits = byBrand.length && (!byName.length || nameAlsoBrand * 2 >= byName.length) ? byName.concat(byBrand) : byName;
+  if (!hits.length) hits = list.filter(p => { const t = norm(p.n + ' ' + (p.b || '') + ' ' + (p.c || '')); return res.every(r => r.test(t)); });
   const food = hits.filter(p => !NAO_ALIMENTO.test(norm(p.c || '')) && !NAO_ALIMENTO_NOME.test(norm(p.n)));
   const starts = food.filter(p => norm(p.n).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim().startsWith(qn));
   let core = starts.length >= 1 ? starts : food.length ? food : hits, basic = null;
@@ -120,6 +129,10 @@ const perUnit = (p, price) => p.qu ? price / p.qu.q : null;
 // produto vendido por unidade/pacote (ex.: salgadinho, chocolate): não mostra R$/kg nem R$/L na linha
 const ehUnidade = p => p._un ??= (() => { for (const t of [norm(p.n), norm(p.c || '')]) for (const r of UNIDADE_MEDIA) if (r.re.test(t)) return r.u === 'un' || r.u === 'pacote' || r.u === 'duzia'; return false; })();
 const mostraQ = p => p.qu && !ehUnidade(p);
+// ícone do cartão: pelo termo; se for marca/termo sem ícone (ex.: "monster"), pela categoria mais comum dos produtos
+const iconCard = (q, core) => { let ic = iconFor(q); if (ic !== '🛒' || !core.length) return ic;
+  const C = {}; for (const p of core.slice(0, 200)) if (p.c) C[p.c] = (C[p.c] || 0) + 1; const top = Object.entries(C).sort((a, b) => b[1] - a[1])[0];
+  return top ? iconFor(top[0]) : ic; };
 const iconFor = q => { const n = norm(q); for (const [re, ic] of ICONS) if (re.test(n)) return ic; return '🛒'; };
 const storeSvg = color => `<svg width="30" height="30" viewBox="0 0 30 30" style="overflow:visible"><circle cx="15" cy="15" r="13.5" fill="${color}" stroke="#fff" stroke-width="1.8"/>
 <path d="M7 10.5 h16 l-1.5 4 H8.5z M8.5 14.5 v7 h13 v-7" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="17.5" width="4" height="4" fill="#fff"/></svg>`;
@@ -363,7 +376,7 @@ function openStore(s) {
     ${s.url ? ` · <a href="${esc(s.url)}" target="_blank" rel="noopener">Ver no site da loja</a>` : ''}<br>
     Preços do site <a href="${c.site}" target="_blank" rel="noopener">${esc(c.site.replace('https://', ''))}</a> · atualizado em ${fmtDate(c.updated)}
     ${c.oldest ? ' · histórico desde ' + fmtDate(c.oldest) : ''}`;
-  $('q').value = ''; $('pq').value = ''; MAIN = []; $('results').innerHTML = '';
+  $('q').value = ''; MAIN = []; $('results').innerHTML = '';
   $('q').focus();
   loadChain(s.c).then(d => (window.requestIdleCallback || setTimeout)(() => acVocab(s.c, d)));  // pré-carrega catálogo e vocabulário do autocompletar
 }
@@ -402,7 +415,7 @@ function openRJ(c) {
 $('cclose').onclick = () => $('closed').classList.add('hidden');
 $('pclose').onclick = () => $('panel').classList.add('hidden');
 
-// ---- tamanho da embalagem digitado na busca de produto (#pq) ----
+// ---- tamanho da embalagem digitado no termo da busca (ex.: "monster 500ml") ----
 // Peso (g/kg) só casa produtos com PESO no nome (qtyOf → kg); volume (ml/L) só os com VOLUME (qtyOf → L). 1 kg = 1000 g, 1 L = 1000 ml.
 // Margem de ±10% do valor digitado (500 ml pega a lata de 473 ml; 350 ml pega 315–385 ml); o tamanho mais próximo vem primeiro.
 // Multipacks usam o tamanho total (o mesmo do preço por kg/L). Itens pesados na hora (preço do site já é por kg) ficam de fora.
@@ -412,67 +425,52 @@ const tamDe = (p, f) => p.qu && !p.qu.pes && p.qu.u === (f.m === 'ml' ? 'L' : 'k
 const casaTam = (p, f) => { const t = tamDe(p, f); return t != null && Math.abs(t - f.v) <= f.v * 0.10 + 1e-6; };
 const ordemTam = f => (a, b) => Math.abs(tamDe(a, f) - f.v) - Math.abs(tamDe(b, f) - f.v) || a.last[1] - b.last[1];
 
-// tamanho digitado na busca de produto (só no campo de baixo): "500g", "1,5 kg", "473ml", "2 litros", "900 gramas", "1 quilo"…
+// tamanho digitado no termo da busca: "500g", "1,5 kg", "473ml", "2 litros", "900 gramas", "1 quilo"…
 // O tamanho sai das palavras e vira filtro (±10%, mais próximo primeiro).
 const NUM_PAL = {um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, meio: 0.5, meia: 0.5};
 const UN_GR = 'kg|kgs|quilogramas?|kilogramas?|quilos?|kilos?|g|gr|grs|gramas?|mililitros?|ml|l|lt|lts|litros?';
 const TAM_TXT = new RegExp(`(?:^|\\s)(\\d{1,3}(?:\\.\\d{3})+|\\d+(?:[.,]\\d+)?|${Object.keys(NUM_PAL).join('|')})\\s?(${UN_GR})(\\s+e\\s+meio)?(?=\\s|$)`);
 function tamNoTexto(txt) {
-  const n = norm(txt).replace(/\s+/g, ' ').trim(), m = n.match(TAM_TXT); if (!m) return {resto: n, f: null};
+  const o = (txt || '').replace(/\s+/g, ' ').trim(), n = norm(o), m = n.match(TAM_TXT); if (!m) return {resto: o, f: null};
+  const src = n.length === o.length ? o : n;  // resto com a grafia digitada (acentos), quando dá para alinhar
   const u = m[2], vol = /^(mililitros?|ml|l|lt|lts|litros?)$/.test(u), mil = /^(kg|kgs|quilogramas?|kilogramas?|quilos?|kilos?|l|lt|lts|litros?)$/.test(u);
   let x = m[1] in NUM_PAL ? NUM_PAL[m[1]] : /^\d{1,3}(\.\d{3})+$/.test(m[1]) && !mil ? +m[1].replace(/\./g, '') : parseFloat(m[1].replace(',', '.'));  // "1.000 g" = 1000 g
   if (m[3]) x += 0.5;  // "um quilo e meio"
   const v = Math.round(mil ? x * 1000 : x);
-  return {resto: (n.slice(0, m.index) + ' ' + n.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim(), f: v > 0 ? {v, m: vol ? 'ml' : 'g'} : null};
+  return {resto: (src.slice(0, m.index) + ' ' + src.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim(), f: v > 0 ? {v, m: vol ? 'ml' : 'g'} : null};
 }
 let MAIN = [], renderT = null;
 const agenda = (ms = 250) => { clearTimeout(renderT); renderT = setTimeout(render, ms); };
 async function render() {
   clearTimeout(renderT);
   if (!cur) return;
-  const R = $('results'), pt = tamNoTexto($('pq').value), toks = pt.resto.split(/\s+/).filter(Boolean);
-  const busca = toks.length || pt.f;
-  if (!MAIN.length && !busca) { R.innerHTML = ''; return; }
+  const R = $('results');
+  if (!MAIN.length) { R.innerHTML = ''; return; }
   if (!cache[cur.c]) R.innerHTML = '<div class="msg">Carregando catálogo…</div>';
   const myCur = cur, d = await loadChain(cur.c);
   if (myCur !== cur) return;
   R.innerHTML = '';
   const nome = CH[cur.c].name;
-  if (busca) return produtos(R, d, pt.f ? d.list.filter(p => casaTam(p, pt.f)) : d.list, toks, pt.f, nome);
-  for (const q of MAIN) {
-    const {hits, core, basic} = searchTerm(d.list, q);
-    if (!hits.length) { const box = document.createElement('div'); box.className = 'term'; R.appendChild(box); box.innerHTML = `<div class="msg">Nenhum produto encontrado para “${esc(q)}” em ${esc(nome)}.</div>`; continue; }
+  for (const termo of MAIN) {
+    // tamanho no termo ("monster 500ml", "arroz 5kg", "coca dois litros"): filtro de ±10%, tamanho mais próximo primeiro
+    const {resto, f} = tamNoTexto(termo), q = resto, tam = f ? ` · ~${fmtTam(f.v, f.m)}` : '';
+    const lista = f ? d.list.filter(p => casaTam(p, f)) : d.list;
+    const ord = f ? ordemTam(f) : (x, y) => x.last[1] - y.last[1];
+    let {hits, core, basic} = q ? searchTerm(lista, q) : {hits: lista.slice(), core: lista, basic: null};
+    if (f) { const C = new Set(core); hits.sort((a, b) => (C.has(b) - C.has(a)) || ord(a, b)); core = core.slice().sort(ord); if (basic && basic.list) basic.list.sort(ord); }
+    else if (!q) hits.sort(ord);
+    const rot = q || termo;
+    if (!hits.length) { const box = document.createElement('div'); box.className = 'term'; R.appendChild(box); box.innerHTML = `<div class="msg">Nenhum produto encontrado para “${esc(termo)}” em ${esc(nome)}${f ? ` (tamanho ~${esc(fmtTam(f.v, f.m))}, ±10%)` : ''}.</div>`; continue; }
     // cortes de carne com o mesmo nome (picanha bovina × suína × cordeiro): um cartão e uma média por espécie
-    const grupos = basic || ESPECIE.some(([, re]) => re.test(norm(q))) ? null : porEspecie(core);
-    if (!grupos) { termCard(R, q, q, hits, core, basic, nome); continue; }
-    for (const [rot, g] of grupos) termCard(R, q, `${q} ${rot}`, g.slice().sort((x, y) => x.last[1] - y.last[1]), g, null, nome);
+    const grupos = !q || basic || ESPECIE.some(([, re]) => re.test(norm(q))) ? null : porEspecie(core);
+    if (!grupos) { termCard(R, rot, rot, hits, core, basic, nome, false, tam); continue; }
+    for (const [esp, g] of grupos) termCard(R, q, `${q} ${esp}`, g.slice().sort(ord), g, null, nome, false, tam);
     const rest = hits.filter(p => !core.includes(p));
-    if (rest.length) termCard(R, q, `outros com “${q}” no nome`, rest, rest, null, nome, true);
+    if (rest.length) termCard(R, q, `outros com “${q}” no nome`, rest, rest, null, nome, true, tam);
   }
-}
-// busca de produto/marca: todas as palavras (sem acento, por pedaço) no nome ou na marca; dentro dos cartões da busca principal, se houver
-function produtos(R, d, lista, toks, f, nome) {
-  let base = lista, onde = `em ${nome}`;
-  if (MAIN.length) { const S = new Set(); for (const q of MAIN) for (const p of searchTerm(lista, q).hits) S.add(p); base = [...S]; onde = `nos resultados de “${MAIN.join(' + ')}”`; }
-  // sem palavras (só "500ml"): lista tudo desse tamanho
-  const hits = base.filter(p => toks.every(t => p.nn.includes(t))).sort(f ? ordemTam(f) : (a, b) => a.last[1] - b.last[1]);
-  const head = document.createElement('div'); head.className = 'fnote'; R.appendChild(head);
-  const oq = toks.length ? ` com “${toks.join(' ')}”` : '', tam = f ? ` · ~${fmtTam(f.v, f.m)} (±10%)` : '';
-  head.textContent = hits.length ? `${hits.length} produto${hits.length > 1 ? 's' : ''}${oq} ${onde}${tam}` : `Nenhum produto${oq} ${onde}${tam}.`;
-  if (!hits.length) return;
-  const list = document.createElement('div'); list.className = 'list'; R.appendChild(list); let shown = 0;
-  const more = () => {
-    list.querySelector('.more')?.remove();
-    for (const p of hits.slice(shown, shown + 60)) list.appendChild(rowEl(p));
-    shown += 60;
-    if (shown < hits.length) { const b = document.createElement('button'); b.className = 'more'; b.textContent = `Mostrar mais (${hits.length - shown})`; b.onclick = more; list.appendChild(b); }
-  };
-  more();
 }
 $('sform').onsubmit = e => { e.preventDefault(); MAIN = $('q').value.split('+').map(t => t.trim()).filter(Boolean); render(); };
 $('q').addEventListener('input', () => { if (!$('q').value.trim() && MAIN.length) { MAIN = []; agenda(0); } });
-$('pform').onsubmit = e => { e.preventDefault(); render(); };
-$('pq').addEventListener('input', () => agenda());
 
 
 const ESPECIE = [['bovina', /\b(bovin[ao]s?|boi|novilh[ao]|angus|wagyu|hereford|vitela|vaca)\b/], ['suína', /\b(suin[ao]s?|porco|leitao|pernil)\b/],
@@ -485,15 +483,15 @@ function porEspecie(core) {
   if (comEsp.length < 2) return null;
   return [...G.entries()].sort((a, b) => (a[0][0] === '(') - (b[0][0] === '(') || b[1].length - a[1].length);
 }
-function termCard(R, q, titulo, hits, core, basic, nome, semMedia) {
+function termCard(R, q, titulo, hits, core, basic, nome, semMedia, sufixo = '') {
   const box = document.createElement('div'); box.className = 'term'; R.appendChild(box);
   const st = termStats(basic && basic.list ? basic.list : core, q);
   const un = ROT_UN[st.unit] || st.unit, porUn = ['un', 'duzia', 'pacote'].includes(st.unit);
   // número grande = mediana ("preço típico"); média aparada (robust(): tira os fora de 1,5×IQR) no texto
   const avgTxt = semMedia ? '' : `${BRL(st.med)}/${un}`;
   const avgSub = semMedia ? 'itens variados — sem média' : `Preço típico do ${esc(nome)} · média ${BRL(st.mean)}/${un} (${st.kept} de ${st.n} produtos${st.semPeso ? ', sem peso/volume no nome' : ''})${basic ? (basic.none ? `<br>sem ${esc(basic.rot)} com preço nesta loja — média de todos os itens` : `<br>referência: ${esc(basic.rot)}`) : ''}`;
-  box.innerHTML = `<div class="card"><div class="ico" style="font-size:34px">${iconFor(q)}</div>
-    <div><div class="t">${esc(titulo)}</div><div class="sub">${hits.length} produto${hits.length > 1 ? 's' : ''} à venda em ${esc(nome)}${core.length < hits.length ? ` (${core.length} principais)` : ''} · clique para ver</div></div>
+  box.innerHTML = `<div class="card"><div class="ico" style="font-size:34px">${iconCard(q, core)}</div>
+    <div><div class="t">${esc(titulo)}${sufixo ? `<span class="tam">${esc(sufixo)}</span>` : ''}</div><div class="sub">${hits.length} produto${hits.length > 1 ? 's' : ''} à venda em ${esc(nome)}${core.length < hits.length ? ` (${core.length} principais)` : ''} · clique para ver</div></div>
     <div class="avg"><b>${avgTxt}</b><div>${avgSub}</div></div></div><div class="list" hidden></div>`;
   const list = box.querySelector('.list'); let shown = 0;
   const more = () => {
@@ -720,13 +718,14 @@ $('geo').onsubmit = async e => {
   if (r) go(r); else { $('gsug').hidden = false; $('gsug').innerHTML = '<div>Nenhuma cidade ou estado encontrado.</div>'; }
 };
 
-// ---- assistente de escrita (autocompletar) nos dois campos do painel da loja ----
-// Vocabulário montado uma vez por rede (em memória, sem localStorage) a partir do catálogo carregado:
-//  • campo de cima (#q, termos com "+"): 1ª palavra / 1ªs duas palavras dos nomes, categorias (no singular) e termos dos ícones/unidades;
-//  • campo de baixo (#pq): marcas (p.b) e palavras/pares de palavras dos nomes, com a grafia mais comum.
+// ---- assistente de escrita (autocompletar) no campo de busca do painel da loja (#q; completa só o termo depois do último "+") ----
+// Vocabulário montado uma vez por rede (em memória, sem localStorage) a partir do catálogo carregado, juntando:
+//  • categorias/palavras: 1ª palavra / 1ªs duas palavras dos nomes, categorias (no singular), termos dos ícones/unidades e demais palavras dos nomes;
+//  • marcas (p.b), com a grafia da loja.
 // Contagem = nº de produtos cujo nome tem a palavra/expressão (o mesmo critério da busca). Começa com 2 letras, prefixo sem acento.
 const AC_STOP = new Set('de da do das dos com sem e em para ao a o as os na no por tipo un und unid ml g gr grs kg l lt lts cx pct pc pcs cm mm mg kit'.split(' '));
 const AC = {};
+const UN_PALAVRAS = ['kg', 'kgs', 'quilo', 'quilos', 'quilograma', 'quilogramas', 'kilo', 'kilos', 'kilograma', 'g', 'gr', 'grs', 'grama', 'gramas', 'ml', 'mililitro', 'mililitros', 'l', 'lt', 'lts', 'litro', 'litros'];
 function acVocab(id, d) {
   if (AC[id]) return AC[id];
   const df = new Map(), form = new Map(), first = new Map(), cats = new Map(), brands = new Map(), bform = new Map();
@@ -751,46 +750,51 @@ function acVocab(id, d) {
   const pick = m => { const B = new Map(); for (const [kf, n] of m) { const i = kf.indexOf('\t'), k = kf.slice(0, i), o = B.get(k); if (!o || n > o[1]) B.set(k, [kf.slice(i + 1), n]); } return B; };
   const best = pick(form), bestB = pick(bform);
   const sing = k => k.split(' ').map(w => w.length > 4 && w.endsWith('es') && df.has(w.slice(0, -2)) ? w.slice(0, -2) : w.length > 3 && w.endsWith('s') && df.has(w.slice(0, -1)) ? w.slice(0, -1) : w).join(' ');
-  // campo de cima
+  // categorias / palavras de produto
   const C = new Map(), addC = k => { k = sing(k); const n = df.get(k); if (n && !AC_STOP.has(k)) C.set(k, n); };
   for (const [k, n] of first) if (n >= (k.includes(' ') ? 3 : 2)) addC(k);
   for (const k of cats.keys()) if (k.split(' ').length <= 3) addC(k);
   const termos = [...ICONS.map(([re]) => re), ...UNIDADE_MEDIA.map(r => r.re), ...Object.values(BASICOS).map(b => b.re)]
     .flatMap(re => (re.source.replace(/\\[bswd]/g, ' ').match(/[a-z]{3,}(?: [a-z]{3,})?/g) || []));
   for (const t of termos) addC(t), addC(t.split(' ')[0]);
-  const cat = [...C].map(([k, n]) => ({k, d: (best.get(k)?.[0] || k).toLowerCase(), n})).sort((a, b) => b.n - a.n);
-  // campo de baixo
-  const P = new Map();
-  for (const [k, n] of df) if (n >= 2 || first.has(k)) P.set(k, {k, d: best.get(k)?.[0] || k, n});
-  for (const [k, n] of brands) { const d = bestB.get(k)?.[0] || k, o = P.get(k); P.set(k, {k, d, n: Math.max(n, o ? o.n : 0), b: 1}); }
-  const prod = [...P.values()].sort((a, b) => b.n - a.n || (b.b || 0) - (a.b || 0));
-  return AC[id] = {cat, prod};
+  const cat = [...C].map(([k, n]) => ({k, d: (best.get(k)?.[0] || k).toLowerCase(), n, c: 1})).sort((a, b) => b.n - a.n);
+  // união: categorias + palavras dos nomes (minúsculas) + marcas (como a loja escreve, com bônus no ranking)
+  const U = new Map(cat.map(it => [it.k, it]));
+  for (const [k, n] of df) if (!U.has(k) && n >= 2 && !AC_STOP.has(k)) U.set(k, {k, d: (best.get(k)?.[0] || k).toLowerCase(), n});
+  for (const [k, n] of brands) { const o = U.get(k); U.set(k, {k, d: bestB.get(k)?.[0] || k, n: Math.max(n, o ? o.n : 0), b: 1}); }
+  return AC[id] = {all: [...U.values()].sort((a, b) => b.n - a.n)};
 }
 // candidatos por prefixo; ordem: mais produtos, com bônus para marca e para quando o que foi digitado já é a 1ª palavra inteira ("red" → "Red Bull")
 function acCands(list, pref, max) {
   const out = [];
   for (const it of list) if (it.k.startsWith(pref) && it.k !== pref) out.push(it);
-  const sc = it => it.n * (it.b ? 2 : 1) * (it.k[pref.length] === ' ' ? 3 : 1);
-  return out.sort((a, b) => sc(b) - sc(a)).slice(0, max);
+  const sc = it => it.n * (it.b ? 2 : it.c ? 3 : 1) * (it.k[pref.length] === ' ' ? 3 : 1);
+  return out.sort((a, b) => sc(b) - sc(a) || a.k.length - b.k.length).slice(0, max);
 }
 const acBox = document.createElement('div'); acBox.id = 'acbox'; acBox.hidden = true; acBox.setAttribute('role', 'listbox'); $('panel').appendChild(acBox);
-let acState = null, acT = null;  // {inp, items:[{it, before}], sel}
+let acState = null, acT = null;  // {inp, items:[{it, base, typed}], sel}
 function acClose() { acBox.hidden = true; acState = null; }
 function acDraw() {
   const {inp, items, sel} = acState, F = inp.form, P = $('panel').getBoundingClientRect(), r = F.getBoundingClientRect(), cs = getComputedStyle(F);
   const pl = parseFloat(cs.paddingLeft), pr = parseFloat(cs.paddingRight), ir = inp.getBoundingClientRect();
   acBox.style.left = (r.left - P.left + pl) + 'px'; acBox.style.width = (r.width - pl - pr) + 'px'; acBox.style.top = (ir.bottom - P.top + 3) + 'px';
-  acBox.innerHTML = items.map(({it, typed, base}, i) => { const d = it.d, m = Math.min(typed, d.length), pre = base.slice(inp.id === 'q' ? base.lastIndexOf('+') + 1 : 0).trim();
+  acBox.innerHTML = items.map(({it, typed, base}, i) => { const d = it.d, m = Math.min(typed, d.length), pre = base.slice(base.lastIndexOf('+') + 1).trim();
     return `<div class="aci${i === sel ? ' on' : ''}" role="option" data-i="${i}"><span class="act">${pre ? `<i>${esc(pre)} </i>` : ''}<b>${esc(d.slice(0, m))}</b>${esc(d.slice(m))}</span><small>${it.n}</small></div>`; }).join('');
   acBox.hidden = false;
 }
 async function acUpdate(inp) {
   if (!cur || document.activeElement !== inp) return acClose();
-  const top = inp.id === 'q', v = inp.value, cut = top ? v.lastIndexOf('+') + 1 : 0;  // em cima: só o termo depois do último "+"
+  const v = inp.value, cut = v.lastIndexOf('+') + 1;  // só o termo depois do último "+"
   const lead = v.slice(cut).match(/^\s*/)[0], termo = v.slice(cut + lead.length), pref = norm(termo).replace(/\s+/g, ' ');
   if (pref.replace(/\s/g, '').length < 2 || /\s$/.test(termo)) return acClose();
+  // digitando número/tamanho ("500", "500m", "2 litros"): não sugere
+  const ult = pref.split(' ').pop();
+  const pw = pref.split(' '), ant = pw.length > 1 ? pw[pw.length - 2] : '';
+  const unidade = /^\d/.test(ant) || ant in NUM_PAL ? UN_PALAVRAS.some(u => u.startsWith(ult)) : false;  // "2 lit", "dois li", "500 m"
+  const mt = pref.match(TAM_TXT);
+  if (/\d/.test(ult) || unidade || (mt && mt.index + mt[0].length >= pref.length)) return acClose();
   const myCur = cur, d = await loadChain(cur.c); if (myCur !== cur || document.activeElement !== inp) return;
-  const list = (V => top ? V.cat : V.prod)(acVocab(cur.c, d)), antes = v.slice(0, cut) + lead;
+  const list = acVocab(cur.c, d).all, antes = v.slice(0, cut) + lead;
   const items = acCands(list, pref, 6).map(it => ({it, base: antes, typed: termo.length}));
   // várias palavras: também completa só a última, mantendo as anteriores (um tamanho como "500ml" fica como está)
   const sp = termo.lastIndexOf(' '), last = sp > 0 ? norm(termo.slice(sp + 1)) : '';
@@ -803,9 +807,9 @@ function acPick(i) {
   const s = acState; if (!s || !s.items[i]) return;
   const {inp} = s, x = s.items[i];
   inp.value = x.base + x.it.d; acClose(); inp.focus();
-  if (inp.id === 'q') $('sform').requestSubmit(); else render();
+  $('sform').requestSubmit();
 }
-for (const inp of [$('q'), $('pq')]) {
+for (const inp of [$('q')]) {
   inp.addEventListener('input', () => { clearTimeout(acT); acT = setTimeout(() => acUpdate(inp), 120); });
   inp.addEventListener('focus', () => { clearTimeout(acT); acT = setTimeout(() => acUpdate(inp), 120); });
   inp.addEventListener('blur', () => setTimeout(() => { if (acState && acState.inp === inp && document.activeElement !== inp) acClose(); }, 150));
