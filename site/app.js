@@ -57,7 +57,8 @@ const BASICOS = {
   oleo: {re: /^oleo (de )?soja\b/, not: /spray|trufad|organic/, rot: 'óleo de soja (o "óleo" comum)'},
   feijao: {re: /^feijao\b.*\b(carioca|preto|tipo 1|tipo1)\b/, not: /pronto|temperado|cozido|congelado|feijoada|sopa/, rot: 'feijão carioca/preto cru'},
   acucar: {re: /^acucar\b.*\b(refinado|cristal)\b/, not: /sache|stick|cubo/, rot: 'açúcar refinado/cristal'},
-  cafe: {re: /^cafe\b.*\b(po|torrado e moido|moido|grao|graos)\b/, not: /capsula|sache|soluvel|cappuccino|bebida/, rot: 'café em pó/grão'},
+  // café comum de pacote: torrado e moído / em pó / em grãos, inclusive "Tradicional", "Extraforte", "a Vácuo" (que não dizem "pó" no nome)
+  cafe: {re: /^cafe\b/, not: /capsula|sache|soluvel|instantaneo|cappuccino|capuccino|bebida|liquido|gelado|pronto|drip|filtro|com leite|latte|mocha|chocolate|achocolatado|doce|bala|biscoito|licor|cafeteira|xicara/, rot: 'café em pó/grão (tradicional, extraforte, a vácuo…)'},
   leite: {re: /^leite\b.*\b(integral|desnatado|semidesnatado|uht)\b/, not: /condensado|po\b|fermentado|coco|amendoa|aveia|soja|castanha|creme/, rot: 'leite UHT'},
 };
 
@@ -457,7 +458,13 @@ async function render() {
     const lista = f ? d.list.filter(p => casaTam(p, f)) : d.list;
     const ord = f ? ordemTam(f) : (x, y) => x.last[1] - y.last[1];
     let {hits, core, basic} = q ? searchTerm(lista, q) : {hits: lista.slice(), core: lista, basic: null};
-    if (f) { const C = new Set(core); hits.sort((a, b) => (C.has(b) - C.has(a)) || ord(a, b)); core = core.slice().sort(ord); if (basic && basic.list) basic.list.sort(ord); }
+    if (f) {
+      // com tamanho: sem nenhum item de referência nesse tamanho, a média usa todos os produtos do tamanho (sem a nota "sem … nesta loja");
+      // com referência, ela continua valendo (ex.: óleo 900ml = óleo de soja, não girassol/canola) e esses itens vêm primeiro na lista,
+      // para o número do cartão bater com as primeiras linhas mostradas
+      if (basic && !basic.list) basic = null;
+      const C = new Set(core), B = new Set(basic ? basic.list : []);
+      hits.sort((a, b) => (C.has(b) - C.has(a)) || (B.has(b) - B.has(a)) || ord(a, b)); core = core.slice().sort((a, b) => (B.has(b) - B.has(a)) || ord(a, b)); if (basic) basic.list.sort(ord); }
     else if (!q) hits.sort(ord);
     const rot = q || termo;
     if (!hits.length) { const box = document.createElement('div'); box.className = 'term'; R.appendChild(box); box.innerHTML = `<div class="msg">Nenhum produto encontrado para “${esc(termo)}” em ${esc(nome)}${f ? ` (tamanho ~${esc(fmtTam(f.v, f.m))}, ±10%)` : ''}.</div>`; continue; }
