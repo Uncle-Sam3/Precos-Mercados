@@ -5,7 +5,7 @@
   "site": "https://www.zaffari.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.1555,
+  "old_share": 0.1565,
   "old_years": [
    "2023",
    "2024",
@@ -14,17 +14,17 @@
   "n": 15393,
   "n_arch": 59,
   "oldest": "2023-08-29",
-  "n_prices": 18320,
-  "n_archive": 2934,
+  "n_prices": 18353,
+  "n_archive": 2967,
   "oldest_archive": "2023-08-29",
   "by_source": {
    "a": 412,
    "v": 15386,
    "c": 2473,
-   "w": 49
+   "w": 82
   },
   "has_old": true,
-  "size": 5349706,
+  "size": 5353772,
   "status": "ok"
  },
  {
@@ -33,7 +33,7 @@
   "site": "https://www.supermuffato.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.2517,
+  "old_share": 0.2555,
   "old_years": [
    "2013",
    "2014",
@@ -41,6 +41,7 @@
    "2016",
    "2017",
    "2018",
+   "2019",
    "2020",
    "2021",
    "2022",
@@ -48,18 +49,18 @@
    "2025"
   ],
   "n": 6889,
-  "n_arch": 141,
+  "n_arch": 146,
   "oldest": "2013-04-30",
-  "n_prices": 9329,
-  "n_archive": 2441,
+  "n_prices": 9396,
+  "n_archive": 2508,
   "oldest_archive": "2013-04-30",
   "by_source": {
    "v": 6888,
    "c": 2059,
-   "w": 382
+   "w": 449
   },
   "has_old": true,
-  "size": 2687532,
+  "size": 2696989,
   "status": "ok"
  },
  {
@@ -68,25 +69,25 @@
   "site": "https://www.bistek.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.2443,
+  "old_share": 0.246,
   "old_years": [
    "2024",
    "2025"
   ],
   "n": 12351,
   "n_arch": 645,
-  "oldest": "2024-05-30",
-  "n_prices": 12096,
-  "n_archive": 4572,
-  "oldest_archive": "2024-05-30",
+  "oldest": "2024-05-27",
+  "n_prices": 12133,
+  "n_archive": 4609,
+  "oldest_archive": "2024-05-27",
   "by_source": {
    "c": 4441,
    "v": 7524,
    "a": 109,
-   "w": 22
+   "w": 59
   },
   "has_old": true,
-  "size": 4889637,
+  "size": 4894050,
   "status": "ok"
  },
  {
