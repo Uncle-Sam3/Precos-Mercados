@@ -299,12 +299,14 @@ async function init() {
   refreshMarkers();
 }
 
+// item pesado na loja (EAN de peso variável 2xxxxxxxxxxxx ou URL terminada em -kg): o preço do site é por kg
+const pesado = p => (/(^|-)kg$/.test(p.s || '') || /^2\d{12}$/.test(p.e || '')) ? {q: 1, u: 'kg', pes: 1} : null;
 async function loadChain(id) {
   if (!cache[id]) cache[id] = fetch(`data/chains/${id}.json`).then(r => r.json()).then(d => {
     d.list = Object.entries(d.p).map(([id, p]) => {
       const h = (p.h || []).slice().sort((a, b) => a[0] < b[0] ? -1 : 1);
       const last = h[h.length - 1];
-      return {id, ...p, h, last, qu: qtyOf(p.n), nn: norm(p.n + ' ' + (p.b || ''))};
+      return {id, ...p, h, last, qu: qtyOf(p.n) || pesado(p), nn: norm(p.n + ' ' + (p.b || ''))};
     }).filter(p => p.last);
     return d;
   });
@@ -369,29 +371,49 @@ $('sform').onsubmit = async e => {
   if (!terms.length || !cur) return;
   const R = $('results');
   R.innerHTML = '<div class="msg">Carregando catálogo…</div>';
-  const d = await loadChain(cur.c);
+  const myCur = cur, d = await loadChain(cur.c);
+  if (myCur !== cur) return;
   R.innerHTML = '';
+  const nome = CH[cur.c].name;
   for (const q of terms) {
     const {hits, core, basic} = searchTerm(d.list, q);
-    const box = document.createElement('div'); box.className = 'term'; R.appendChild(box);
-    if (!hits.length) { box.innerHTML = `<div class="msg">Nenhum produto encontrado para “${esc(q)}” em ${esc(CH[cur.c].name)}.</div>`; continue; }
-    const st = termStats(basic && basic.list ? basic.list : core);
-    const un = st.unit === 'un' ? 'un' : st.unit;
-    const avgTxt = `${BRL(st.med)}/${un}`;
-    const avgSub = `mediana · média ${BRL(st.mean)}/${un} (${st.kept} de ${st.n} produtos${st.unit === 'un' ? ', sem peso/volume no nome' : ''})${basic ? (basic.none ? `<br>sem ${esc(basic.rot)} com preço nesta loja — média de todos os itens` : `<br>referência: ${esc(basic.rot)}`) : ''}`;
-    box.innerHTML = `<div class="card"><div class="ico" style="font-size:34px">${iconFor(q)}</div>
-      <div><div class="t">${esc(q)}</div><div class="sub">${hits.length} produto${hits.length > 1 ? 's' : ''}${core.length < hits.length ? ` (${core.length} principais)` : ''} · clique para ver</div></div>
-      <div class="avg"><b>${avgTxt}</b><div>${avgSub}</div></div></div><div class="list" hidden></div>`;
-    const list = box.querySelector('.list'); let shown = 0;
-    const more = () => {
-      list.querySelector('.more')?.remove();
-      for (const p of hits.slice(shown, shown + 60)) list.appendChild(rowEl(p));
-      shown += 60;
-      if (shown < hits.length) { const b = document.createElement('button'); b.className = 'more'; b.textContent = `Mostrar mais (${hits.length - shown})`; b.onclick = more; list.appendChild(b); }
-    };
-    box.querySelector('.card').onclick = () => { list.hidden = !list.hidden; if (!shown) more(); };
+    if (!hits.length) { const box = document.createElement('div'); box.className = 'term'; R.appendChild(box); box.innerHTML = `<div class="msg">Nenhum produto encontrado para “${esc(q)}” em ${esc(nome)}.</div>`; continue; }
+    // cortes de carne com o mesmo nome (picanha bovina × suína × cordeiro): um cartão e uma média por espécie
+    const grupos = basic || ESPECIE.some(([, re]) => re.test(norm(q))) ? null : porEspecie(core);
+    if (!grupos) { termCard(R, q, q, hits, core, basic, nome); continue; }
+    for (const [rot, g] of grupos) termCard(R, q, `${q} ${rot}`, g.slice().sort((x, y) => x.last[1] - y.last[1]), g, null, nome);
+    const rest = hits.filter(p => !core.includes(p));
+    if (rest.length) termCard(R, q, `outros com “${q}” no nome`, rest, rest, null, nome, true);
   }
 };
+const ESPECIE = [['bovina', /\b(bovin[ao]s?|boi|novilh[ao]|angus|wagyu|hereford|vitela|vaca)\b/], ['suína', /\b(suin[ao]s?|porco|leitao|pernil)\b/],
+  ['de cordeiro', /\b(cordeiro|ovin[ao]s?|carneiro|borrego)\b/], ['de frango', /\b(frango|galinha|galeto)\b/], ['de peru', /\bperu\b/],
+  ['de peixe', /\b(peixe|salmao|tilapia|atum|bacalhau)\b/]];
+function porEspecie(core) {
+  const G = new Map();
+  for (const p of core) { const n = norm(p.n) + ' ' + norm(p.c || ''); const e = ESPECIE.find(([, re]) => re.test(n)); const k = e ? e[0] : '(espécie não informada)'; if (!G.has(k)) G.set(k, []); G.get(k).push(p); }
+  const comEsp = [...G.keys()].filter(k => k[0] !== '(');
+  if (comEsp.length < 2) return null;
+  return [...G.entries()].sort((a, b) => (a[0][0] === '(') - (b[0][0] === '(') || b[1].length - a[1].length);
+}
+function termCard(R, q, titulo, hits, core, basic, nome, semMedia) {
+  const box = document.createElement('div'); box.className = 'term'; R.appendChild(box);
+  const st = termStats(basic && basic.list ? basic.list : core);
+  const un = st.unit === 'un' ? 'un' : st.unit;
+  const avgTxt = semMedia ? '' : `${BRL(st.med)}/${un}`;
+  const avgSub = semMedia ? 'itens variados — sem média' : `mediana em ${esc(nome)} · média ${BRL(st.mean)}/${un} (${st.kept} de ${st.n} produtos${st.unit === 'un' ? ', sem peso/volume no nome' : ''})${basic ? (basic.none ? `<br>sem ${esc(basic.rot)} com preço nesta loja — média de todos os itens` : `<br>referência: ${esc(basic.rot)}`) : ''}`;
+  box.innerHTML = `<div class="card"><div class="ico" style="font-size:34px">${iconFor(q)}</div>
+    <div><div class="t">${esc(titulo)}</div><div class="sub">${hits.length} produto${hits.length > 1 ? 's' : ''} à venda em ${esc(nome)}${core.length < hits.length ? ` (${core.length} principais)` : ''} · clique para ver</div></div>
+    <div class="avg"><b>${avgTxt}</b><div>${avgSub}</div></div></div><div class="list" hidden></div>`;
+  const list = box.querySelector('.list'); let shown = 0;
+  const more = () => {
+    list.querySelector('.more')?.remove();
+    for (const p of hits.slice(shown, shown + 60)) list.appendChild(rowEl(p));
+    shown += 60;
+    if (shown < hits.length) { const b = document.createElement('button'); b.className = 'more'; b.textContent = `Mostrar mais (${hits.length - shown})`; b.onclick = more; list.appendChild(b); }
+  };
+  box.querySelector('.card').onclick = () => { list.hidden = !list.hidden; if (!shown) more(); };
+}
 
 const SRC = {v: 'site da rede', w: 'Wayback Machine', a: 'Arquivo.pt', c: 'Common Crawl', t: 'archive.today'};
 function srcLink(s, ref) {
@@ -406,7 +428,7 @@ function rowEl(p) {
   const el = document.createElement('div');
   const [d0, v, src] = p.last;
   const d = (!p.arch && src === 'v') ? (p.x || CH[cur.c].updated || d0) : d0; // data em que esse preço foi visto por último
-  el.innerHTML = `<div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))}${p.b ? ' · ' + esc(p.b) : ''}${p.arch ? ' · só no arquivo histórico' : ''}${p.ok === false ? ' · indisponível' : ''}</small></div>
+  el.innerHTML = `<div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))}${p.b ? ' · marca ' + esc(p.b) : ''}${p.arch ? ' · só no arquivo histórico' : ''}${p.ok === false ? ' · indisponível' : ''}</small></div>
     <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}<small>${p.qu ? BRL(perUnit(p, v)) + '/' + p.qu.u + ' · ' : ''}${p.h.length > 1 ? p.h.length + ' registros ▾' : '1 registro ▾'}</small></div></div>`;
   el.firstChild.onclick = () => {
     const open = el.querySelector('.hist');
@@ -422,16 +444,25 @@ function rowEl(p) {
 }
 // ---- tributos aproximados (Lei 12.741/2012, tabela oficial IBPT por NCM e UF da loja) ----
 const IBPT = {};
+let NCMR = null;
+const ncmRules = () => NCMR ||= fetch('data/ncm_regras.json').then(r => r.json()).then(d => ({...d, regras: d.regras.map(x => ({...x, rx: new RegExp(x.re)}))}));
 async function taxBox(p, price, uf) {
-  const na = '<div class="tt">Tributos aproximados</div><div class="tn">Imposto não disponível <small>(produto sem NCM informado pelo site)</small></div>';
-  const ncm = p.ncm && String(p.ncm).replace(/\D/g, '');
-  if (!ncm || ncm.length !== 8 || !uf) return na;
+  const na = '<div class="tt">Tributos</div><div class="tn">Imposto não disponível <small>(sem NCM do produto e sem categoria reconhecida)</small></div>';
+  if (!uf) return na;
+  let ncm = p.ncm && String(p.ncm).replace(/\D/g, ''), est = null, fonte = p.ncm_src || 'site da rede';
+  if (!ncm || ncm.length !== 8) {
+    ncm = null;
+    try { const R = await ncmRules(), t = norm(p.n) + ' | ' + norm(p.c || ''); est = R.regras.find(r => r.rx.test(t)); if (est) ncm = est.ncm; } catch (e) {}
+    if (!ncm) return na;
+  }
   let T; try { T = await (IBPT[uf] ||= fetch(`data/ibpt/${uf}.json`).then(r => r.json())); } catch (e) { return na; }
   const a = T.t[ncm]; if (!a) return na;
-  const [fed, , est, mun] = a, tot = fed + est + mun, R = x => BRL(price * x / 100), P = x => x.toLocaleString('pt-BR', {maximumFractionDigits: 2}) + '%';
-  return `<div class="tt">Tributos aproximados: <b>${R(tot)}</b> <small>(${P(tot)} do preço · NCM ${ncm})</small></div>
-    <div class="tb"><span>Federal <b>${R(fed)}</b> <small>${P(fed)}</small></span><span>Estadual (${uf}) <b>${R(est)}</b> <small>${P(est)}</small></span><span>Municipal <b>${R(mun)}</b> <small>${P(mun)}</small></span></div>
-    <div class="tf">Fonte: IBPT — De Olho no Imposto, tabela ${esc(T.versao)} (vigência ${esc(T.vigencia[0])} a ${esc(T.vigencia[1])}). Federal para produto nacional.</div>`;
+  const [fed, , es, mun] = a, tot = fed + es + mun, R = x => BRL(price * x / 100), P = x => x.toLocaleString('pt-BR', {maximumFractionDigits: 2}) + '%';
+  const titulo = est ? `Tributos estimados pela categoria (aproximado): <b>${R(tot)}</b>` : `Tributos aproximados (NCM do produto, fonte: ${esc(fonte)}): <b>${R(tot)}</b>`;
+  const ncmTxt = est ? `NCM provável ${ncm.replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3')} — ${esc(est.d)}` : `NCM ${ncm.replace(/(\d{4})(\d{2})(\d{2})/, '$1.$2.$3')}`;
+  return `<div class="tt">${titulo} <small>(${P(tot)} do preço)</small></div>
+    <div class="tb"><span>Federal <b>${R(fed)}</b> <small>${P(fed)}</small></span><span>Estadual (${uf}) <b>${R(es)}</b> <small>${P(es)}</small></span><span>Municipal <b>${R(mun)}</b> <small>${P(mun)}</small></span></div>
+    <div class="tf">${ncmTxt}. Alíquotas: IBPT — De Olho no Imposto, tabela ${esc(T.versao)} (vigência ${esc(T.vigencia[0])} a ${esc(T.vigencia[1])}), federal para produto nacional.${est ? ' Estimativa: o NCM foi deduzido do nome/categoria, não informado pelo site.' : ''}</div>`;
 }
 
 // ---- busca de cidades/estados (dados IBGE embutidos) ----
