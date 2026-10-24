@@ -107,7 +107,7 @@ const BASEMAPS = {
   detalhado: {nome: 'Escuro detalhado', thumb: 'assets/maps/detalhado.jpg',
     make: () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: OSM_ATTR, className: 'tiles-invert'})},
 };
-const BASEMAP_PADRAO = 'preto';
+const BASEMAP_PADRAO = 'detalhado';   // sempre abre em Escuro detalhado; a troca vale só para esta visita
 let baseLayer = null, baseKey = null, refLayer = null;
 // ---- rótulos (nomes de ruas / bairros) ----
 const LBL = Object.assign({ruas: false, bairros: true},  // nomes de ruas ocultos por padrão
@@ -168,10 +168,9 @@ function setBasemap(key) {
   if (refLayer) { map.removeLayer(refLayer); refLayer = null; }
   if (key === 'preto') { const ml = baseLayer.getMaplibreMap && baseLayer.getMaplibreMap(); if (ml) { ml.on('styledata', applyLabels); ml.on('load', applyLabels); ml.on('idle', applyLabels); } }
   applyLabels(); drawLabelUI();
-  localStorage.setItem('mapa', key);
   document.querySelectorAll('#bmenu .opt').forEach(o => o.classList.toggle('on', o.dataset.k === key));
 }
-const map = L.map('map', {zoomControl: false, minZoom: 4, maxBounds: [[-40, -82], [12, -25]], maxBoundsViscosity: 0.9, scrollWheelZoom: true, doubleClickZoom: true, touchZoom: true}).fitBounds([[-33.8, -73.9], [5.3, -34.8]]);
+const map = L.map('map', {zoomControl: false, minZoom: 4, maxZoom: 18, maxBounds: [[-40, -82], [12, -25]], maxBoundsViscosity: 0.9, scrollWheelZoom: true, doubleClickZoom: true, touchZoom: true}).fitBounds([[-33.8, -73.9], [5.3, -34.8]]);
 map.attributionControl.setPrefix(false);
 // créditos compactos: botão "i" que mostra a atribuição (exigida pelas licenças OSM/Esri/OpenFreeMap)
 (() => { const el = map.attributionControl.getContainer(); el.classList.add('compact');
@@ -247,7 +246,8 @@ async function updateMask() {
 maskRenderer.on('update', () => setTimeout(syncClip, 0));
 map.on('zoomend moveend viewreset', () => { updateMask(); setTimeout(syncClip, 0); });
 updateMask();
-setBasemap(localStorage.getItem('mapa') || BASEMAP_PADRAO);
+try { localStorage.removeItem('mapa'); } catch (e) {}
+setBasemap(BASEMAP_PADRAO);
 $('bmenu').innerHTML = Object.entries(BASEMAPS).map(([k, b]) => `<button class="opt${k === baseKey ? ' on' : ''}" data-k="${k}"><img src="${b.thumb}" alt=""><span>${b.nome}</span></button>`).join('');
 $('bmenu').querySelectorAll('.opt').forEach(o => o.onclick = () => { setBasemap(o.dataset.k); $('bmenu').hidden = true; });
 $('bbtn').onclick = e => { e.stopPropagation(); $('lmenu').hidden = true; $('bmenu').hidden = !$('bmenu').hidden; };
@@ -270,14 +270,16 @@ function refreshMarkers() {
     $('zhint').hidden = show || !!FORCE || !ALL.length;
     const b = map.getBounds().pad(0.15), novos = [];
     for (const it of ALL) {
-      const dentro = (show || (FORCE && it.cid === FORCE)) && b.contains([it.lat, it.lon]);
-      if (dentro && !it.mk) { it.mk = it.make().addTo(map); novos.push(it); }
-      else if (!dentro && it.mk) { map.removeLayer(it.mk); it.mk = null; }
+      try {
+        const dentro = (show || (FORCE && it.cid === FORCE)) && b.contains([it.lat, it.lon]);
+        if (dentro && !it.mk) { it.mk = it.make().addTo(map); novos.push(it); }
+        else if (!dentro && it.mk) { map.removeLayer(it.mk); it.mk = null; }
+      } catch (e) { console.warn('marcador', e); }   // um item ruim não pode impedir os demais de aparecer
     }
     sproutNew(novos);
   }, 150);
 }
-map.on('moveend zoomend', refreshMarkers);
+map.on('moveend zoomend viewreset resize', refreshMarkers);
 
 async function init() {
   const [chains, stores] = await Promise.all([fetch('data/chains.json').then(r => r.json()), fetch('data/stores.json').then(r => r.json())]);
@@ -566,7 +568,9 @@ async function go(x) {
   if (outline) { map.removeLayer(outline); outline = null; }
   let bounds;
   if (feat) {
-    outline = L.geoJSON(feat, {interactive: false, style: {color: '#3b8cff', weight: 2.5, opacity: 0.95, fill: true, fillColor: '#2f7cf6', fillOpacity: 0.06, className: 'outline-glow'}}).addTo(map);
+    outline = L.featureGroup([  // brilho sem filtro CSS (drop-shadow em polígono grande travava o celular)
+      L.geoJSON(feat, {interactive: false, style: {color: '#2f7cf6', weight: 9, opacity: 0.22, fill: false}}),
+      L.geoJSON(feat, {interactive: false, style: {color: '#3b8cff', weight: 2.5, opacity: 0.95, fill: true, fillColor: '#2f7cf6', fillOpacity: 0.06}})]).addTo(map);
     bounds = outline.getBounds();
   } else if (x.bb) bounds = L.latLngBounds([x.bb[0], x.bb[1]], [x.bb[2], x.bb[3]]);
   const done = () => { collapseGeo(); };
