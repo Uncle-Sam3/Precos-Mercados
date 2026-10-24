@@ -98,7 +98,10 @@ def best(code):
     raise SystemExit(f"sem código válido para {code}")
 for rx, code in R:
     re.compile(rx); c = best(code)
-    out.append({"re": rx, "ncm": c, "d": DESC.get(c, "")[:90]})
+    cl = lambda t: t.strip().lstrip("-– ").strip().rstrip(":").strip()
+    parts = [x for x in dict.fromkeys(cl(DESC.get(c[:n], "")) for n in (4, 5, 6, 7, 8)) if x and x.lower() not in ("outros", "outras")]
+    parts = [(x[:57].rsplit(" ", 1)[0] + "…") if len(x) > 60 else x for x in parts]
+    out.append({"re": rx, "ncm": c, "d": " › ".join(parts)})
 json.dump({"fonte_nomenclatura": f"Receita Federal/Siscomex — {nom['Data_Ultima_Atualizacao_NCM']} ({nom['Ato']})", "regras": out},
           open(os.path.join(os.path.dirname(__file__), "..", "site/data/ncm_regras.json"), "w"), ensure_ascii=False, separators=(",", ":"))
 print(len(out), "regras;", "substituídos:", fixed)
