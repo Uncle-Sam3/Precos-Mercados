@@ -117,6 +117,9 @@ function termStats(core, q) {
   return {unit: 'un', semPeso: true, ...robust(base.map(p => p.last[1]))};
 }
 const perUnit = (p, price) => p.qu ? price / p.qu.q : null;
+// produto vendido por unidade/pacote (ex.: salgadinho, chocolate): não mostra R$/kg nem R$/L na linha
+const ehUnidade = p => p._un ??= (() => { for (const t of [norm(p.n), norm(p.c || '')]) for (const r of UNIDADE_MEDIA) if (r.re.test(t)) return r.u === 'un' || r.u === 'pacote' || r.u === 'duzia'; return false; })();
+const mostraQ = p => p.qu && !ehUnidade(p);
 const iconFor = q => { const n = norm(q); for (const [re, ic] of ICONS) if (re.test(n)) return ic; return '🛒'; };
 const storeSvg = color => `<svg width="30" height="30" viewBox="0 0 30 30" style="overflow:visible"><circle cx="15" cy="15" r="13.5" fill="${color}" stroke="#fff" stroke-width="1.8"/>
 <path d="M7 10.5 h16 l-1.5 4 H8.5z M8.5 14.5 v7 h13 v-7" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="17.5" width="4" height="4" fill="#fff"/></svg>`;
@@ -516,13 +519,13 @@ function rowEl(p) {
   const [d0, v, src] = p.last;
   const d = (!p.arch && src === 'v') ? (p.x || CH[cur.c].updated || d0) : d0; // data em que esse preço foi visto por último
   el.innerHTML = `<div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))}${p.b ? ' · marca ' + esc(p.b) : ''}${p.arch ? ' · só no arquivo histórico' : ''}${p.ok === false ? ' · indisponível' : ''}</small></div>
-    <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}<small class="meta">${p.qu ? BRL(perUnit(p, v)) + '/' + p.qu.u + ' · ' : ''}${p.h.length > 1 ? p.h.length + ' registros ▾' : '1 registro ▾'}</small></div></div>`;
+    <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}<small class="meta">${mostraQ(p) ? BRL(perUnit(p, v)) + '/' + p.qu.u + ' · ' : ''}${p.h.length > 1 ? p.h.length + ' registros ▾' : '1 registro ▾'}</small></div></div>`;
   el.firstChild.onclick = () => {
     const open = el.querySelector('.hist');
     if (open) { open.remove(); return; }
     const h = document.createElement('div'); h.className = 'hist';
     h.innerHTML = p.h.map(([d, v, s, ref]) => `<div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))} · <span class="src">${srcLink(s, ref)}</span></small></div>
-      <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}${p.qu ? `<small class="meta">${BRL(perUnit(p, v))}/${p.qu.u}</small>` : ''}</div></div>`).join('');
+      <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}${mostraQ(p) ? `<small class="meta">${BRL(perUnit(p, v))}/${p.qu.u}</small>` : ''}</div></div>`).join('');
     const tx = document.createElement('div'); tx.className = 'tax'; tx.textContent = 'Tributos aproximados…';
     h.appendChild(tx); el.appendChild(h);
     taxBox(p, v, cur && cur.uf).then(html => tx.innerHTML = html);
