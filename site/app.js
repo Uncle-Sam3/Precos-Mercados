@@ -452,13 +452,13 @@ function rowEl(p) {
   const [d0, v, src] = p.last;
   const d = (!p.arch && src === 'v') ? (p.x || CH[cur.c].updated || d0) : d0; // data em que esse preço foi visto por último
   el.innerHTML = `<div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))}${p.b ? ' · marca ' + esc(p.b) : ''}${p.arch ? ' · só no arquivo histórico' : ''}${p.ok === false ? ' · indisponível' : ''}</small></div>
-    <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}<small>${p.qu ? BRL(perUnit(p, v)) + '/' + p.qu.u + ' · ' : ''}${p.h.length > 1 ? p.h.length + ' registros ▾' : '1 registro ▾'}</small></div></div>`;
+    <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}<small class="meta">${p.qu ? BRL(perUnit(p, v)) + '/' + p.qu.u + ' · ' : ''}${p.h.length > 1 ? p.h.length + ' registros ▾' : '1 registro ▾'}</small></div></div>`;
   el.firstChild.onclick = () => {
     const open = el.querySelector('.hist');
     if (open) { open.remove(); return; }
     const h = document.createElement('div'); h.className = 'hist';
     h.innerHTML = p.h.map(([d, v, s, ref]) => `<div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))} · <span class="src">${srcLink(s, ref)}</span></small></div>
-      <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}${p.qu ? `<small>${BRL(perUnit(p, v))}/${p.qu.u}</small>` : ''}</div></div>`).join('');
+      <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}${p.qu ? `<small class="meta">${BRL(perUnit(p, v))}/${p.qu.u}</small>` : ''}</div></div>`).join('');
     const tx = document.createElement('div'); tx.className = 'tax'; tx.textContent = 'Tributos aproximados…';
     h.appendChild(tx); el.appendChild(h);
     taxBox(p, v, cur && cur.uf).then(html => tx.innerHTML = html);
@@ -498,7 +498,7 @@ function semImp(el, p, price) {
     const d = document.createElement('small'); d.className = 'semimp';
     d.textContent = `sem impostos ${ti.est ? '~' : ''}${BRL(price * (1 - ti.tot / 100))}`;
     d.title = ti.est ? 'estimativa pela categoria (IBPT)' : 'tributos aproximados pelo NCM do produto (IBPT)';
-    el.appendChild(d);
+    const m = el.querySelector('.meta'); m ? el.insertBefore(d, m) : el.appendChild(d); // "sem impostos" acima da linha kg · registros
   });
 }
 async function taxBox(p, price, uf) {
