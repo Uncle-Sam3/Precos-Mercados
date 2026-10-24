@@ -10,13 +10,15 @@ CUR = os.path.join(ROOT, 'collector/ref/cosmos_cursor.json')
 cur = json.load(open(CUR)) if os.path.exists(CUR) else {'i': 0, 'page': 1, 'voltas': 0}
 regras = json.load(open(os.path.join(ROOT, 'site/data/ncm_regras.json')))['regras']
 P = produtos(); D = carregar()
-# NCMs ordenados pela quantidade de produtos nossos que caem em cada regra
-cont = {}
+# peso do NCM = soma da prioridade (básico x10 x população atendida pelas redes) dos nossos produtos que caem nele
+W = pesos_redes(); cont = {}
 rx = [(re.compile(r['re']), r['ncm']) for r in regras]
 for e, p in P.items():
+    if e in D and D[e][1] != 'categoria': continue
     t = norm(p['n']) + ' | ' + norm(p['c'])
+    sc = (STAPLE_BOOST if STAPLES.match(norm(p['n'])) else 1) * sum(W.get(r, 0) for r in p['redes'])
     for r, c in rx:
-        if r.search(t): cont[c] = cont.get(c, 0) + 1; break
+        if r.search(t): cont[c] = cont.get(c, 0) + sc; break
 ncms = sorted(cont, key=lambda c: -cont[c])
 S = requests.Session(); S.headers.update({'X-Cosmos-Token': TOKEN, 'User-Agent': 'Cosmos-API-Request', 'Content-Type': 'application/json'})
 feitos = novos = 0
