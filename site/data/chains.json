@@ -5,7 +5,7 @@
   "site": "https://www.zaffari.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.1546,
+  "old_share": 0.1548,
   "old_years": [
    "2023",
    "2024",
@@ -14,16 +14,17 @@
   "n": 15393,
   "n_arch": 59,
   "oldest": "2023-08-29",
-  "n_prices": 18255,
-  "n_archive": 2869,
+  "n_prices": 18304,
+  "n_archive": 2918,
   "oldest_archive": "2023-08-29",
   "by_source": {
    "a": 396,
    "v": 15386,
-   "c": 2473
+   "c": 2473,
+   "w": 49
   },
   "has_old": true,
-  "size": 5341617,
+  "size": 5347583,
   "status": "ok"
  },
  {
@@ -32,23 +33,33 @@
   "site": "https://www.supermuffato.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.2333,
+  "old_share": 0.2517,
   "old_years": [
+   "2013",
+   "2014",
+   "2015",
+   "2016",
+   "2017",
+   "2018",
+   "2020",
+   "2021",
+   "2022",
    "2024",
    "2025"
   ],
   "n": 6889,
-  "n_arch": 0,
-  "oldest": "2024-06-14",
-  "n_prices": 8950,
-  "n_archive": 2062,
-  "oldest_archive": "2024-06-14",
+  "n_arch": 141,
+  "oldest": "2013-04-30",
+  "n_prices": 9329,
+  "n_archive": 2441,
+  "oldest_archive": "2013-04-30",
   "by_source": {
    "v": 6888,
-   "c": 2062
+   "c": 2059,
+   "w": 382
   },
   "has_old": true,
-  "size": 2614312,
+  "size": 2687532,
   "status": "ok"
  },
  {
@@ -57,24 +68,25 @@
   "site": "https://www.bistek.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.2437,
+  "old_share": 0.2443,
   "old_years": [
    "2024",
    "2025"
   ],
   "n": 12351,
-  "n_arch": 642,
-  "oldest": "2024-07-14",
-  "n_prices": 12075,
-  "n_archive": 4551,
-  "oldest_archive": "2024-07-14",
+  "n_arch": 645,
+  "oldest": "2024-05-30",
+  "n_prices": 12096,
+  "n_archive": 4572,
+  "oldest_archive": "2024-05-30",
   "by_source": {
-   "c": 4442,
+   "c": 4441,
    "v": 7524,
-   "a": 109
+   "a": 109,
+   "w": 22
   },
   "has_old": true,
-  "size": 4886513,
+  "size": 4889637,
   "status": "ok"
  },
  {
@@ -107,7 +119,7 @@
   "site": "https://www.zonasul.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.0189,
+  "old_share": 0.0226,
   "old_years": [
    "2021",
    "2022",
@@ -117,17 +129,18 @@
   ],
   "n": 23822,
   "n_arch": 141,
-  "oldest": "2021-04-01",
-  "n_prices": 11874,
-  "n_archive": 628,
-  "oldest_archive": "2021-04-01",
+  "oldest": "2021-01-16",
+  "n_prices": 11991,
+  "n_archive": 745,
+  "oldest_archive": "2021-01-16",
   "by_source": {
    "a": 447,
    "v": 11246,
-   "c": 181
+   "c": 181,
+   "w": 117
   },
   "has_old": true,
-  "size": 7166602,
+  "size": 7182980,
   "status": "ok"
  },
  {
@@ -162,20 +175,24 @@
   "name": "Oba Hortifruti",
   "site": "https://www.obahortifruti.com.br",
   "updated": "2026-10-23",
-  "hist_level": "none",
-  "old_share": 0.0,
-  "old_years": [],
+  "hist_level": "partial",
+  "old_share": 0.0223,
+  "old_years": [
+   "2023",
+   "2024"
+  ],
   "n": 5644,
   "n_arch": 0,
-  "oldest": "2026-10-23",
-  "n_prices": 5444,
-  "n_archive": 0,
-  "oldest_archive": null,
+  "oldest": "2023-01-19",
+  "n_prices": 5570,
+  "n_archive": 126,
+  "oldest_archive": "2023-01-19",
   "by_source": {
-   "v": 5444
+   "v": 5444,
+   "w": 126
   },
-  "has_old": false,
-  "size": 1785884,
+  "has_old": true,
+  "size": 1800596,
   "status": "ok"
  },
  {
