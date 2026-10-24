@@ -36,6 +36,7 @@
     <div class="lg"><span class="dot orange"></span> Em recuperação judicial <small>(dívida e situação com fonte)</small></div>
     <div class="lg"><span class="dot gray">✕</span> Fechado <small>(ano e motivo com fonte)</small></div>
     <div class="lg small">Clique no ícone da loja para pesquisar produtos. Os mercados aparecem ao aproximar o zoom.</div>
+    <div class="lg small tax"><b>Preço típico</b> = mediana (o preço do meio, que não é distorcido por produtos muito caros ou baratos); <b>média</b> = soma dos preços dividida pela quantidade.</div>
     <div class="lg small tax"><b>Impostos:</b> valores aproximados, como no rodapé do cupom fiscal, pela tabela oficial do IBPT (Lei da Transparência Fiscal, 12.741/2012), conforme o código fiscal (NCM) do produto e o estado da loja, divididos em federal, estadual e municipal. Quando o site não informa o NCM, ele é deduzido da categoria/nome do produto e o valor aparece como <i>estimado pela categoria</i>. Sem NCM e sem categoria reconhecida: "Imposto não disponível".</div>
   </div>
   <div id="closed" class="hidden">
@@ -48,7 +49,9 @@
       <div><div id="pt"></div><div id="ps"></div></div>
       <button id="pclose" title="Fechar">✕</button>
     </div>
-    <form id="sform"><input id="q" type="search" placeholder="Pesquisar (ex.: salgadinho+bolacha+óleo)" title="Use + para pesquisar vários produtos de uma vez" autocomplete="off"><button>Buscar</button></form>
+    <form id="sform"><input id="q" type="search" placeholder="Pesquisar (ex.: salgadinho+bolacha+óleo)" title="Use + para pesquisar vários produtos de uma vez" autocomplete="off"><button type="submit" id="sbtn">Buscar</button></form>
+    <form id="pform"><input id="pq" type="search" placeholder="Buscar produto ou marca (ex.: monster)" title="Procura no nome e na marca de cada produto" autocomplete="off"><div id="wbox" aria-hidden="true"><div id="wmode" role="group" aria-label="Tipo de medida"><button type="button" data-m="g" class="on" tabindex="-1">g</button><button type="button" data-m="ml" tabindex="-1">ml</button></div><input id="wq" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="peso" aria-label="Peso em gramas" autocomplete="off" tabindex="-1"><span id="wu"></span><button type="button" id="wx" title="Limpar filtro" tabindex="-1">✕</button></div><button type="button" id="fbtn" title="Filtrar por peso (g/kg) ou volume (ml/L)" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5z"/></svg><i id="fdot"></i></button></form>
+    <div id="phint">Dica: dá pra digitar o tamanho junto, ex.: <b>monster 500ml</b>, <b>café 500g</b>, <b>refrigerante 2l</b></div>
     <div id="results"></div>
   </div>
 </div>

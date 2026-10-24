@@ -134,3 +134,32 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .list>div>.row .pr .semimp{margin-top:3px}
 .hist .row .pr{display:flex;flex-direction:column;align-items:center;text-align:center}
 .row .pr .meta{color:#9a9a9a}
+
+/* 2ª linha do painel: busca de produto/marca + filtro de peso/volume (botão azul com funil que abre para a esquerda) */
+#sform{padding-bottom:6px}
+#sform #sbtn{width:76px;flex:none;padding:0}
+#pform{display:flex;gap:6px;padding:0 14px 10px;align-items:stretch}
+#pq{flex:1;min-width:0;background:#121212;border:1px solid #3a3a3a;color:#eee;border-radius:8px;padding:8px 10px;font-size:13.5px}
+#pq::placeholder{color:#8a8a8a}
+#pform button{border:none;cursor:pointer}
+#fbtn{position:relative;width:76px;flex:none;padding:0;border-radius:8px;background:#2f7cf6;display:flex;align-items:center;justify-content:center;min-height:36px}
+#sbtn:hover,#fbtn:hover{background:#4a8ff8}
+#fbtn.on{background:#1f5fd0;box-shadow:inset 0 0 0 2px #7fb0ff}
+#fdot{position:absolute;top:5px;right:8px;width:8px;height:8px;border-radius:50%;background:#7ee08a;border:1.5px solid #181818;display:none}
+#fbtn.ativo #fdot{display:block}
+#q{min-width:0}
+#wbox{display:flex;align-items:center;gap:4px;flex:0 1 auto;min-width:0;width:auto;max-width:0;opacity:0;overflow:hidden;background:#121212;border:1px solid transparent;border-radius:8px;
+  transition:max-width .32s cubic-bezier(.4,0,.2,1),opacity .2s,border-color .3s,padding .3s;pointer-events:none;padding:0}
+#wbox.open{max-width:230px;opacity:1;border-color:#2f7cf6;pointer-events:auto;padding:0 2px 0 4px}
+#wmode{display:flex;flex:none;background:#232323;border-radius:6px;padding:2px}
+#wmode button{background:none;color:#9aa;font-size:11.5px;padding:3px 6px;border-radius:5px;line-height:1.1}
+#wmode button.on{background:#2f7cf6;color:#fff}
+#wq{width:46px;flex:none;min-width:0;background:transparent;border:none;outline:none;color:#eee;font-size:14px;padding:0 2px;text-align:right}
+#wq::placeholder{color:#666}
+#wu{flex:0 1 auto;min-width:0;font-size:12.5px;color:#7fb0ff;white-space:nowrap;overflow:hidden;text-overflow:clip}
+#pform #wx{background:none;color:#999;width:20px;flex:none;padding:0;font-size:12px}
+#pform #wx:hover{color:#fff}
+@media (max-width:480px){#sform,#pform{padding-left:8px;padding-right:8px}#phint{padding-left:8px;padding-right:8px}#sform #sbtn{width:62px}#fbtn{width:44px}#wq{width:36px}#wmode button{padding:3px 4px}#pform:has(#wbox.open) #pq{padding-left:6px;padding-right:2px}#wbox{gap:3px}#pform #wx{display:none}#wu{font-size:12px}}
+@media (prefers-reduced-motion: reduce){#wbox{transition:none}}
+.term .fnote,.fnote{font-size:11px;color:#7fb0ff;margin:2px 4px 6px}
+#phint{font-size:10.5px;color:#8a8a8a;padding:0 14px 8px;margin-top:-5px;line-height:1.3}#phint b{color:#b9c6da;font-weight:500}

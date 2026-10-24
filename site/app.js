@@ -6,16 +6,24 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const fmtDate = d => d ? d.split('-').reverse().join('/') : '';
 const SIZE_RE = /(\d+(?:[.,]\d+)?)\s?(kg|g|gr|mg|ml|l|lt|litros?|un|unid(?:ades)?)\b/i;
 const sizeOf = n => { const m = (n || '').match(SIZE_RE); return m ? m[0].replace(/\s+/, '') : ''; };
+// ícones dos cartões: regras específicas primeiro, genéricas depois (palavras inteiras: "maca" ≠ "macarrao", "mel" ≠ "melancia", "pao" ≠ "sabao")
 const ICONS = [
-  [/oleo|azeite|oliva/, '🫒'], [/salgadinho|chips|batata palha|snack|amendoim/, '🍿'], [/biscoito|bolacha|cookie|wafer/, '🍪'],
-  [/chocolate|bombom|cacau/, '🍫'], [/cafe|capsula/, '☕'], [/leite|iogurte|bebida lactea/, '🥛'], [/queijo|requeijao/, '🧀'],
-  [/cerveja|chopp/, '🍺'], [/vinho|espumante/, '🍷'], [/refrigerante|suco|agua|energetico|bebida/, '🥤'],
-  [/arroz|feijao|graos|lentilha/, '🍚'], [/macarrao|massa|espaguete|lasanha/, '🍝'], [/pao|bisnaguinha|torrada/, '🍞'],
-  [/carne|bife|picanha|alcatra|frango|linguica|salsicha|bacon|presunto|mortadela/, '🥩'], [/peixe|atum|sardinha|salmao|camarao/, '🐟'],
-  [/ovo/, '🥚'], [/fruta|banana|maca|laranja|uva|morango|limao/, '🍎'], [/legume|verdura|tomate|cebola|alface|batata/, '🥕'],
-  [/sabao|detergente|amaciante|desinfetante|limpa|alvejante|agua sanitaria/, '🧴'], [/papel higienico|guardanapo|papel toalha/, '🧻'],
-  [/shampoo|condicionador|sabonete|creme dental|desodorante/, '🧼'], [/racao|pet|cachorro|gato/, '🐾'], [/sorvete|picole/, '🍦'],
-  [/acucar|adocante|sal\b|tempero|molho|ketchup|maionese/, '🧂'], [/farinha|fuba|aveia|cereal|granola/, '🌾'], [/fralda|bebe/, '🍼'],
+  [/batata palha|salgadinho|chips|snack|pipoca|amendoim/, '🍿'], [/\b(sabao|detergente|amaciante|desinfetante|limpa\w*|alvejante|agua sanitaria)\b/, '🧴'],
+  [/\b(feijao|feijoes|lentilhas?|grao de bico|ervilhas?)\b/, '🫘'], [/\barroz\b/, '🍚'], [/\b(macarrao|massas?|espaguete|lasanha|talharim|penne|parafuso)\b/, '🍝'],
+  [/\b(alfaces?|couves?|rucula|espinafre|agriao|repolho|verduras?|cheiro verde)\b/, '🥬'], [/\b(cenouras?|legumes?)\b/, '🥕'], [/\btomates?\b/, '🍅'],
+  [/\bcebolas?\b/, '🧅'], [/\balhos?\b/, '🧄'], [/\bbatatas?\b/, '🥔'], [/\bbrocolis\b/, '🥦'], [/\b(pepinos?|abobrinhas?)\b/, '🥒'],
+  [/\b(pimentao|pimentoes|pimentas?)\b/, '🫑'], [/\bmilho\b/, '🌽'], [/\babacates?\b/, '🥑'], [/\bbananas?\b/, '🍌'], [/\bmacas?\b/, '🍎'],
+  [/\b(laranjas?|tangerinas?|mexericas?|bergamotas?)\b/, '🍊'], [/\b(limao|limoes)\b/, '🍋'], [/\buvas?\b/, '🍇'], [/\bmorangos?\b/, '🍓'], [/\bmelancias?\b/, '🍉'],
+  [/\babacaxis?\b/, '🍍'], [/\bmangas?\b/, '🥭'], [/\bperas?\b/, '🍐'], [/\bcocos?\b/, '🥥'], [/\b(frutas?)\b/, '🍎'],
+  [/\b(frango|galinha|peito|coxas?|sobrecoxas?|asas?)\b/, '🍗'], [/\bovos?\b/, '🥚'], [/\b(queijos?|requeijao|mussarela)\b/, '🧀'], [/\b(manteiga|margarina)\b/, '🧈'],
+  [/\bmel\b/, '🍯'], [/\b(camarao|camaroes)\b/, '🦐'], [/\b(peixes?|atum|sardinhas?|salmao|tilapia|bacalhau)\b/, '🐟'],
+  [/\b(carnes?|bife|picanha|alcatra|maminha|costela|patinho|acem|linguica|salsicha|bacon|presunto|mortadela)\b/, '🥩'],
+  [/\b(chocolates?|bombom|bombons|cacau)\b/, '🍫'], [/\b(biscoitos?|bolachas?|cookies?|wafer)\b/, '🍪'], [/\b(cha|chas)\b/, '🍵'], [/\b(cafe|capsulas?)\b/, '☕'],
+  [/\b(leite|iogurtes?|bebida lactea)\b/, '🥛'], [/\b(cervejas?|chopp)\b/, '🍺'], [/\b(vinhos?|espumantes?)\b/, '🍷'], [/\baguas?\b/, '💧'],
+  [/\b(refrigerantes?|sucos?|energeticos?|bebidas?)\b/, '🥤'], [/\bpizzas?\b/, '🍕'], [/\bbolos?\b/, '🍰'], [/\b(pao|paes|bisnaguinha|torradas?)\b/, '🍞'],
+  [/\b(oleo|azeite|oliva)\b/, '🫒'], [/\b(papel higienico|guardanapos?|papel toalha)\b/, '🧻'], [/\b(shampoo|condicionador|sabonetes?|creme dental|desodorante)\b/, '🧼'],
+  [/\b(racao|pet|cachorro|gato)\b/, '🐾'], [/\b(sorvetes?|picoles?)\b/, '🍦'], [/\b(acucar|adocante|sal|temperos?|molhos?|ketchup|maionese)\b/, '🧂'],
+  [/\b(farinha|fuba|aveia|cereais|cereal|granola)\b/, '🌾'], [/\b(fraldas?|bebe)\b/, '🍼'],
 ];
 // quantidade normalizada: {q: quantidade em kg ou L, u: 'kg'|'L'}
 function qtyOf(name) {
@@ -82,6 +90,7 @@ function robust(vals) {
 const UNIDADE_MEDIA = [
   {re: /\bovos?\b/, u: 'duzia'},
   {re: /papel higienico|papel toalha|guardanapo|lenco de papel|fralda|absorvente/, u: 'pacote'},
+  {re: /\b(alfaces?|couves?|rucula|agriao|cheiro verde)\b/, u: 'un'},  // folhas: vendidas por pé/maço
   {re: /salgadinho|chips|snack|batata (frita|chips|palha)|pipoca de micro|amendoim japones|biscoito|bolacha|cookie|wafer|chocolate|bombom|barra de cereal|chiclete|goma de mascar|\bbalas?\b|pirulito|pilha|bateria|lampada|escova|desodorante|sabonete|sabao em barra|creme dental|pasta de dente|fio dental|aparelho de barbear|lamina|esponja|vela|isqueiro|fosforo|picole|sorvete|iogurte|petit suisse|bebida lactea|refrigerante lata|cerveja lata/, u: 'un'},
   {re: /carne|picanha|alcatra|maminha|costela|patinho|acem|frango|peito|coxa|linguica|bacon|peixe|file|camarao|arroz|feijao|farinha|fuba|acucar|cafe|sal\b|batata|tomate|cebola|banana|maca|laranja|limao|cenoura|queijo|presunto|mortadela|macarrao|massa/, u: 'kg'},
   {re: /oleo|azeite|leite|suco|refrigerante|agua|cerveja|vinho|bebida|detergente|amaciante|desinfetante|sabao liquido|lava roupas|agua sanitaria|alvejante|vinagre/, u: 'L'},
@@ -351,7 +360,7 @@ function openStore(s) {
     ${s.url ? ` · <a href="${esc(s.url)}" target="_blank" rel="noopener">Ver no site da loja</a>` : ''}<br>
     Preços do site <a href="${c.site}" target="_blank" rel="noopener">${esc(c.site.replace('https://', ''))}</a> · atualizado em ${fmtDate(c.updated)}
     ${c.oldest ? ' · histórico desde ' + fmtDate(c.oldest) : ''}`;
-  $('q').value = ''; $('results').innerHTML = '';
+  $('q').value = ''; $('pq').value = ''; MAIN = []; $('results').innerHTML = ''; abreFiltro(false);
   $('q').focus();
   loadChain(s.c); // pré-carrega
 }
@@ -390,27 +399,106 @@ function openRJ(c) {
 $('cclose').onclick = () => $('closed').classList.add('hidden');
 $('pclose').onclick = () => $('panel').classList.add('hidden');
 
-$('sform').onsubmit = async e => {
-  e.preventDefault();
-  const terms = $('q').value.split('+').map(t => t.trim()).filter(Boolean);
-  if (!terms.length || !cur) return;
-  const R = $('results');
-  R.innerHTML = '<div class="msg">Carregando catálogo…</div>';
+// ---- filtro de tamanho da embalagem (componente: #fbtn + #wbox; aplica nos cartões e na busca de produto) ----
+// Modo "g": só produtos com PESO no nome (qtyOf → kg), rótulo g abaixo de 1000 e kg a partir de 1000.
+// Modo "ml": só produtos com VOLUME no nome (qtyOf → L), rótulo ml abaixo de 1000 e L a partir de 1000.
+// Margem de ±10% do valor digitado (500 ml pega a lata de 473 ml; 350 ml pega 315–385 ml); o tamanho mais próximo vem primeiro.
+// Multipacks usam o tamanho total (o mesmo do preço por kg/L). Itens pesados na hora (preço do site já é por kg) ficam de fora.
+let WMODE = 'g';
+const fmtTam = (v, m = WMODE) => { const big = v >= 1000, n = big ? (v / 1000).toLocaleString('pt-BR', {maximumFractionDigits: 3}) : v;
+  return `${n} ${m === 'ml' ? (big ? 'L' : 'ml') : (big ? 'kg' : 'g')}`; };
+const filtroAtivo = () => { const v = parseInt($('wq').value, 10); return $('wbox').classList.contains('open') && v > 0 ? {v, m: WMODE} : null; };
+const tamDe = (p, f) => p.qu && !p.qu.pes && p.qu.u === (f.m === 'ml' ? 'L' : 'kg') ? p.qu.q * 1000 : null;
+const casaTam = (p, f) => { const t = tamDe(p, f); return t != null && Math.abs(t - f.v) <= f.v * 0.10 + 1e-6; };
+const ordemTam = f => (a, b) => Math.abs(tamDe(a, f) - f.v) - Math.abs(tamDe(b, f) - f.v) || a.last[1] - b.last[1];
+function filtroUI() {
+  const v = $('wq').value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 6);
+  if ($('wq').value !== v) $('wq').value = v;
+  $('wu').textContent = !v ? '' : +v < 1000 ? (WMODE === 'ml' ? 'ml' : 'g') : '= ' + fmtTam(+v);  // "90" g · "9000" = 9 kg · "2000" = 2 L
+  $('wq').placeholder = WMODE === 'ml' ? 'vol.' : 'peso';
+  $('wq').setAttribute('aria-label', WMODE === 'ml' ? 'Volume em ml' : 'Peso em gramas');
+  for (const b of $('wmode').children) b.classList.toggle('on', b.dataset.m === WMODE);
+  $('fbtn').classList.toggle('ativo', !!filtroAtivo());
+}
+function abreFiltro(abrir) {
+  const W = $('wbox'); W.classList.toggle('open', abrir); W.setAttribute('aria-hidden', String(!abrir));
+  $('fbtn').classList.toggle('on', abrir); $('fbtn').setAttribute('aria-expanded', String(abrir));
+  for (const el of W.querySelectorAll('input,button')) el.tabIndex = abrir ? 0 : -1;
+  if (abrir) setTimeout(() => $('wq').focus(), 120); else { $('wq').value = ''; WMODE = 'g'; }
+  filtroUI();
+}
+
+// ---- renderização do painel: cartões da busca principal (MAIN) ou linhas da busca de produto/marca (#pq) ----
+// tamanho digitado na busca de produto (só no campo de baixo): "500g", "1,5 kg", "473ml", "2 litros", "900 gramas", "1 quilo"…
+// O tamanho sai das palavras e vira filtro (±10%, mais próximo primeiro). Se o botão de filtro também tiver valor, o do texto vale para essa busca.
+const NUM_PAL = {um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, meio: 0.5, meia: 0.5};
+const UN_GR = 'kg|kgs|quilogramas?|kilogramas?|quilos?|kilos?|g|gr|grs|gramas?|mililitros?|ml|l|lt|lts|litros?';
+const TAM_TXT = new RegExp(`(?:^|\\s)(\\d{1,3}(?:\\.\\d{3})+|\\d+(?:[.,]\\d+)?|${Object.keys(NUM_PAL).join('|')})\\s?(${UN_GR})(\\s+e\\s+meio)?(?=\\s|$)`);
+function tamNoTexto(txt) {
+  const n = norm(txt).replace(/\s+/g, ' ').trim(), m = n.match(TAM_TXT); if (!m) return {resto: n, f: null};
+  const u = m[2], vol = /^(mililitros?|ml|l|lt|lts|litros?)$/.test(u), mil = /^(kg|kgs|quilogramas?|kilogramas?|quilos?|kilos?|l|lt|lts|litros?)$/.test(u);
+  let x = m[1] in NUM_PAL ? NUM_PAL[m[1]] : /^\d{1,3}(\.\d{3})+$/.test(m[1]) && !mil ? +m[1].replace(/\./g, '') : parseFloat(m[1].replace(',', '.'));  // "1.000 g" = 1000 g
+  if (m[3]) x += 0.5;  // "um quilo e meio"
+  const v = Math.round(mil ? x * 1000 : x);
+  return {resto: (n.slice(0, m.index) + ' ' + n.slice(m.index + m[0].length)).replace(/\s+/g, ' ').trim(), f: v > 0 ? {v, m: vol ? 'ml' : 'g', txt: 1} : null};
+}
+let MAIN = [], renderT = null;
+const agenda = (ms = 250) => { clearTimeout(renderT); renderT = setTimeout(render, ms); };
+async function render() {
+  clearTimeout(renderT);
+  if (!cur) return;
+  const R = $('results'), fb = filtroAtivo(), pt = tamNoTexto($('pq').value), toks = pt.resto.split(/\s+/).filter(Boolean);
+  const busca = toks.length || pt.f;
+  if (!MAIN.length && !busca) { R.innerHTML = ''; return; }
+  if (!cache[cur.c]) R.innerHTML = '<div class="msg">Carregando catálogo…</div>';
   const myCur = cur, d = await loadChain(cur.c);
   if (myCur !== cur) return;
   R.innerHTML = '';
   const nome = CH[cur.c].name;
-  for (const q of terms) {
-    const {hits, core, basic} = searchTerm(d.list, q);
-    if (!hits.length) { const box = document.createElement('div'); box.className = 'term'; R.appendChild(box); box.innerHTML = `<div class="msg">Nenhum produto encontrado para “${esc(q)}” em ${esc(nome)}.</div>`; continue; }
+  if (busca) { const f = pt.f || fb; return produtos(R, d, f ? d.list.filter(p => casaTam(p, f)) : d.list, toks, f, nome); }
+  const f = fb, lista = f ? d.list.filter(p => casaTam(p, f)) : d.list;
+  if (f) { const nt = document.createElement('div'); nt.className = 'fnote'; nt.textContent = `Filtro: embalagens de ${fmtTam(f.v)} (±10%), tamanho mais próximo primeiro`; R.appendChild(nt); }
+  const ord = f ? ordemTam(f) : (x, y) => x.last[1] - y.last[1];
+  for (const q of MAIN) {
+    const {hits, core, basic} = searchTerm(lista, q);
+    if (f) { hits.sort((a, b) => (core.includes(b) - core.includes(a)) || ord(a, b)); }
+    if (!hits.length) { const box = document.createElement('div'); box.className = 'term'; R.appendChild(box); box.innerHTML = `<div class="msg">Nenhum produto ${f ? `de ~${fmtTam(f.v)} ` : ''}encontrado para “${esc(q)}” em ${esc(nome)}.</div>`; continue; }
     // cortes de carne com o mesmo nome (picanha bovina × suína × cordeiro): um cartão e uma média por espécie
     const grupos = basic || ESPECIE.some(([, re]) => re.test(norm(q))) ? null : porEspecie(core);
     if (!grupos) { termCard(R, q, q, hits, core, basic, nome); continue; }
-    for (const [rot, g] of grupos) termCard(R, q, `${q} ${rot}`, g.slice().sort((x, y) => x.last[1] - y.last[1]), g, null, nome);
+    for (const [rot, g] of grupos) termCard(R, q, `${q} ${rot}`, g.slice().sort(ord), g, null, nome);
     const rest = hits.filter(p => !core.includes(p));
     if (rest.length) termCard(R, q, `outros com “${q}” no nome`, rest, rest, null, nome, true);
   }
-};
+}
+// busca de produto/marca: todas as palavras (sem acento, por pedaço) no nome ou na marca; dentro dos cartões da busca principal, se houver
+function produtos(R, d, lista, toks, f, nome) {
+  let base = lista, onde = `em ${nome}`;
+  if (MAIN.length) { const S = new Set(); for (const q of MAIN) for (const p of searchTerm(lista, q).hits) S.add(p); base = [...S]; onde = `nos resultados de “${MAIN.join(' + ')}”`; }
+  const hits = base.filter(p => toks.every(t => p.nn.includes(t)))  // sem palavras (só "500ml"): lista tudo desse tamanho.sort(f ? ordemTam(f) : (a, b) => a.last[1] - b.last[1]);
+  const head = document.createElement('div'); head.className = 'fnote'; R.appendChild(head);
+  const oq = toks.length ? ` com “${toks.join(' ')}”` : '', tam = f ? ` · ~${fmtTam(f.v, f.m)} (±10%${f.txt ? ', do texto' : ''})` : '';
+  head.textContent = hits.length ? `${hits.length} produto${hits.length > 1 ? 's' : ''}${oq} ${onde}${tam}` : `Nenhum produto${oq} ${onde}${tam}.`;
+  if (!hits.length) return;
+  const list = document.createElement('div'); list.className = 'list'; R.appendChild(list); let shown = 0;
+  const more = () => {
+    list.querySelector('.more')?.remove();
+    for (const p of hits.slice(shown, shown + 60)) list.appendChild(rowEl(p));
+    shown += 60;
+    if (shown < hits.length) { const b = document.createElement('button'); b.className = 'more'; b.textContent = `Mostrar mais (${hits.length - shown})`; b.onclick = more; list.appendChild(b); }
+  };
+  more();
+}
+$('sform').onsubmit = e => { e.preventDefault(); MAIN = $('q').value.split('+').map(t => t.trim()).filter(Boolean); render(); };
+$('q').addEventListener('input', () => { if (!$('q').value.trim() && MAIN.length) { MAIN = []; agenda(0); } });
+$('pform').onsubmit = e => { e.preventDefault(); render(); };
+$('pq').addEventListener('input', () => agenda());
+$('fbtn').onclick = () => { const had = !!filtroAtivo(); abreFiltro(!$('wbox').classList.contains('open')); if (had) agenda(0); };
+$('wx').onclick = () => { const had = !!filtroAtivo(); abreFiltro(false); if (had) agenda(0); };
+$('wq').addEventListener('input', () => { filtroUI(); agenda(300); });
+$('wmode').onclick = e => { const m = e.target.dataset && e.target.dataset.m; if (!m || m === WMODE) return; WMODE = m; filtroUI(); if ($('wq').value) agenda(0); $('wq').focus(); };
+
+
 const ESPECIE = [['bovina', /\b(bovin[ao]s?|boi|novilh[ao]|angus|wagyu|hereford|vitela|vaca)\b/], ['suína', /\b(suin[ao]s?|porco|leitao|pernil)\b/],
   ['de cordeiro', /\b(cordeiro|ovin[ao]s?|carneiro|borrego)\b/], ['de frango', /\b(frango|galinha|galeto)\b/], ['de peru', /\bperu\b/],
   ['de peixe', /\b(peixe|salmao|tilapia|atum|bacalhau)\b/]];
@@ -425,8 +513,9 @@ function termCard(R, q, titulo, hits, core, basic, nome, semMedia) {
   const box = document.createElement('div'); box.className = 'term'; R.appendChild(box);
   const st = termStats(basic && basic.list ? basic.list : core, q);
   const un = ROT_UN[st.unit] || st.unit, porUn = ['un', 'duzia', 'pacote'].includes(st.unit);
+  // número grande = mediana ("preço típico"); média aparada (robust(): tira os fora de 1,5×IQR) no texto
   const avgTxt = semMedia ? '' : `${BRL(st.med)}/${un}`;
-  const avgSub = semMedia ? 'itens variados — sem média' : `${porUn ? `preço médio por ${un} (mediana)` : 'mediana'} em ${esc(nome)} · média ${BRL(st.mean)}/${un} (${st.kept} de ${st.n} produtos${st.semPeso ? ', sem peso/volume no nome' : ''})${basic ? (basic.none ? `<br>sem ${esc(basic.rot)} com preço nesta loja — média de todos os itens` : `<br>referência: ${esc(basic.rot)}`) : ''}`;
+  const avgSub = semMedia ? 'itens variados — sem média' : `Preço típico do ${esc(nome)} · média ${BRL(st.mean)}/${un} (${st.kept} de ${st.n} produtos${st.semPeso ? ', sem peso/volume no nome' : ''})${basic ? (basic.none ? `<br>sem ${esc(basic.rot)} com preço nesta loja — média de todos os itens` : `<br>referência: ${esc(basic.rot)}`) : ''}`;
   box.innerHTML = `<div class="card"><div class="ico" style="font-size:34px">${iconFor(q)}</div>
     <div><div class="t">${esc(titulo)}</div><div class="sub">${hits.length} produto${hits.length > 1 ? 's' : ''} à venda em ${esc(nome)}${core.length < hits.length ? ` (${core.length} principais)` : ''} · clique para ver</div></div>
     <div class="avg"><b>${avgTxt}</b><div>${avgSub}</div></div></div><div class="list" hidden></div>`;
