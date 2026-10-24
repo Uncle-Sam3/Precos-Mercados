@@ -75,3 +75,16 @@ python collector/build_index.py
 * `GOOGLE_STREETVIEW_KEY` — chave da Street View Static API (opcional). Atenção: num site estático a URL da imagem
   expõe a chave; restrinja-a por referer (jcbolsaseuniformes-dev.github.io) no Google Cloud.
 Sem chaves, usa só Wikimedia Commons (fotos a até 60 m) ou mostra "Sem foto disponível".
+
+## Atualizações (out/2026)
+- **Histórico em massa** (`collector/harvest.py` + `collector/merge_hist.py`, workflow `historico.yml`, também todo domingo):
+  Wayback Machine (CDX por domínio, paginado), Common Crawl (coleções 2016–2025, WARC por range) e Arquivo.pt.
+  Extrai só preço regular (ListPrice quando há promoção) de JSON da API VTEX, `__STATE__` do VTEX IO e `skuJson` do VTEX legado.
+  Casamento com o catálogo atual: EAN → slug → productId. Cada registro guarda fonte + captura (`ref`). Checkpoint em cache do Actions.
+- **Lojas**: `collector/stores_oficial.py` usa o site oficial da rede (VTEX pickup-points: endereço + coordenadas) como fonte principal,
+  valida cada ponto contra a malha IBGE (em terra e no município do endereço), corrige via Nominatim quando preciso e oculta o que não dá
+  para confirmar. OpenStreetMap (`collector/ref/stores_osm.json`) fica como reserva.
+- **Mapa**: contorno IBGE em alta resolução por células de 2° (`tools/build_mask.py`), recorte dos mapas base no Brasil, rótulos só do Brasil,
+  lojas só com zoom ≥ 10 e na área visível; busca do topo inclui redes e lojas.
+- **Tributos aproximados**: tabelas oficiais IBPT 26.2.B (`site/data/ibpt/<UF>.json`, capítulos de NCM de supermercado), aplicadas quando o
+  site da rede publica o NCM do produto; sem NCM aparece "Imposto não disponível".

@@ -5,7 +5,7 @@
   "site": "https://www.zaffari.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.1548,
+  "old_share": 0.1555,
   "old_years": [
    "2023",
    "2024",
@@ -14,17 +14,17 @@
   "n": 15393,
   "n_arch": 59,
   "oldest": "2023-08-29",
-  "n_prices": 18304,
-  "n_archive": 2918,
+  "n_prices": 18320,
+  "n_archive": 2934,
   "oldest_archive": "2023-08-29",
   "by_source": {
-   "a": 396,
+   "a": 412,
    "v": 15386,
    "c": 2473,
    "w": 49
   },
   "has_old": true,
-  "size": 5347583,
+  "size": 5349706,
   "status": "ok"
  },
  {
@@ -119,7 +119,7 @@
   "site": "https://www.zonasul.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.0226,
+  "old_share": 0.0238,
   "old_years": [
    "2021",
    "2022",
@@ -130,17 +130,17 @@
   "n": 23822,
   "n_arch": 141,
   "oldest": "2021-01-16",
-  "n_prices": 11991,
-  "n_archive": 745,
+  "n_prices": 12027,
+  "n_archive": 781,
   "oldest_archive": "2021-01-16",
   "by_source": {
-   "a": 447,
+   "a": 484,
    "v": 11246,
-   "c": 181,
+   "c": 180,
    "w": 117
   },
   "has_old": true,
-  "size": 7182980,
+  "size": 7187029,
   "status": "ok"
  },
  {
@@ -358,22 +358,22 @@
   "site": "https://www.bretas.com.br",
   "updated": "2026-10-23",
   "hist_level": "partial",
-  "old_share": 0.0,
+  "old_share": 0.0006,
   "old_years": [
    "2023"
   ],
   "n": 28576,
   "n_arch": 19,
   "oldest": "2023-08-19",
-  "n_prices": 21,
-  "n_archive": 19,
+  "n_prices": 38,
+  "n_archive": 36,
   "oldest_archive": "2023-08-19",
   "by_source": {
-   "v": 2,
-   "a": 19
+   "a": 36,
+   "v": 2
   },
   "has_old": true,
-  "size": 7913677,
+  "size": 7915694,
   "status": "ok"
  }
 ]

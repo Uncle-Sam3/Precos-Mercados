@@ -4,7 +4,7 @@ Só usa coordenadas reais do OSM; filtra por nome/marca e pelos estados onde a r
 import json, re, os, sys, time, requests
 from geo import nearest
 from chains import CHAINS
-OUT = os.path.join(os.path.dirname(__file__), "..", "site", "data", "stores.json")
+OUT = os.path.join(os.path.dirname(__file__), "ref", "stores_osm.json")  # reserva; o site usa stores.json gerado por stores_oficial.py
 ENDPOINTS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
 UA = "PrecosSupermercados/1.0 (github.com/jcbolsaseuniformes-dev/precos-supermercados)"
 # nomes p/ consulta (regex OSM, case-insensitive)
