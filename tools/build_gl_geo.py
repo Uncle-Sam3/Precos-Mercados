@@ -22,3 +22,21 @@ for nome, g, nd, simp in [('hi', hi, 5, 0.0003), ('lo', lo, 3, 0.01)]:
     contorno = MultiPolygon([orient(p, 1.0) for p in polys(contorno)])
     save(f'site/data/geo/gl-brasil-{nome}.json', contorno, nd)
     save(f'site/data/geo/gl-mascara-{nome}.json', orient(MUNDO.difference(g), 1.0) if MUNDO.difference(g).geom_type == 'Polygon' else MUNDO.difference(g), nd)
+
+# Máscara de baixo zoom SEM furos: mundo − contorno principal, cortado em pedaços (lat −15 e lon −52) para que nenhum
+# polígono tenha furo. Um polígono com o Brasil como furo, recortado pelo geojson-vt nas bordas dos tiles, fazia o
+# triangulador (earcut) gerar uma cunha escura atravessando o Norte (Roraima → Macapá) nos zooms 2–4.
+def mascara_lo_sem_furos():
+    from shapely.geometry import Polygon
+    g = shape(json.load(open('site/data/geo/gl-brasil-lo.json')))
+    principal = Polygon(max(polys(g), key=lambda p: p.area).exterior)   # ilhotas (≤ 1 px nesse zoom) ficam de fora
+    resto = MUNDO.difference(principal); pedacos = []
+    for q in [box(-110, -65, -52, -15), box(-52, -65, -5, -15), box(-110, -15, -52, 30), box(-52, -15, -5, 30)]:
+        r = resto.intersection(q)
+        pedacos += [orient(p, 1.0) for p in polys(r) if p.geom_type == 'Polygon' and p.area > 0]
+    assert all(not p.interiors for p in pedacos)
+    fc = {'type': 'FeatureCollection', 'features': [{'type': 'Feature', 'properties': {}, 'geometry': rnd(mapping(p), 3)} for p in pedacos]}
+    json.dump(fc, open('site/data/geo/gl-mascara-lo.json', 'w'), separators=(',', ':')); print('gl-mascara-lo.json', len(pedacos), 'pedaços')
+
+if __name__ == '__main__':
+    mascara_lo_sem_furos()

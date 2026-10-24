@@ -275,8 +275,10 @@ function wireMap() {
   map.on('zoom', () => { if (ALL.length) $('zhint').hidden = map.getZoom() >= MIN_ZOOM_LOJAS || !!FORCE; });
   map.on('moveend', loadHi);
   }
-Promise.all([getJ('data/geo/gl-brasil-lo.json'), IMG_READY]).then(([lo]) => {
-  BR_LO = lo; DATA['br-lo'] = feat_(lo); DATA['mask-lo'] = maskOf(lo);
+// mask-lo vem pronta em pedaços sem furos (tools/build_gl_geo.py): o polígono "mundo com o Brasil como furo", recortado
+// nos tiles de baixo zoom, gerava uma cunha escura atravessando o Norte (Roraima → Macapá).
+Promise.all([getJ('data/geo/gl-brasil-lo.json'), getJ('data/geo/gl-mascara-lo.json'), IMG_READY]).then(([lo, mlo]) => {
+  BR_LO = lo; DATA['br-lo'] = feat_(lo); DATA['mask-lo'] = mlo;
   return (localStorage.removeItem('mapa'), setBasemap(BASEMAP_PADRAO));
 }).then(() => { init(); loadHi(); });
 $('bmenu').innerHTML = Object.entries(BASEMAPS).map(([k, b]) => `<button class="opt" data-k="${k}"><img src="${b.thumb}" alt="" loading="lazy"><span>${b.nome}</span></button>`).join('');
