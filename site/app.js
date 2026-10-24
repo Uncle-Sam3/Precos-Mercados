@@ -472,8 +472,15 @@ const IBPT = {};
 let NCMR = null;
 const ncmRules = () => NCMR ||= fetch('data/ncm_regras.json').then(r => r.json()).then(d => ({...d, regras: d.regras.map(x => ({...x, rx: new RegExp(x.re)}))}));
 // alíquota aproximada total (%) do produto na UF: {tot, fed, es, mun, ncm, est, T} ou null
+let NCME = null;  // NCM exato por EAN (coletores Cosmos/OSCBR): data/ncm_ean.json = {ean: [ncm, fonte, data]}
+async function ncmExato(p) {
+  if (p.ncm || !p.e) return;
+  const m = (await (NCME ||= fetch('data/ncm_ean.json').then(r => r.ok ? r.json() : {}).catch(() => ({}))))[p.e];
+  if (m) { p.ncm = m[0]; p.ncm_src = m[1]; }
+}
 async function taxInfo(p, uf) {
   if (!uf) return null;
+  await ncmExato(p);
   let ncm = p.ncm && String(p.ncm).replace(/\D/g, ''), est = null;
   if (!ncm || ncm.length !== 8) {
     ncm = null;
@@ -495,6 +502,7 @@ function semImp(el, p, price) {
   });
 }
 async function taxBox(p, price, uf) {
+  await ncmExato(p);
   const na = '<div class="tt">Tributos</div><div class="tn">Imposto não disponível <small>(sem NCM do produto e sem categoria reconhecida)</small></div>';
   if (!uf) return na;
   let ncm = p.ncm && String(p.ncm).replace(/\D/g, ''), est = null, fonte = p.ncm_src || 'site da rede';

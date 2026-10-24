@@ -1,0 +1,31 @@
+name: NCM por EAN — Cosmos
+on:
+  schedule: [{cron: "17 9 * * *"}]
+  workflow_dispatch: {}
+permissions: {contents: write}
+concurrency: {group: ncm-ean, cancel-in-progress: false}
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COSMOS_TOKEN: ${{ secrets.COSMOS_TOKEN }}
+    steps:
+      - name: Segredos presentes?
+        id: s
+        run: if [ -n "$COSMOS_TOKEN" ]; then echo ok=1 >> $GITHUB_OUTPUT; else echo "::notice::Segredo(s) ausente(s) — pulando sem erro."; fi
+      - uses: actions/checkout@v4
+        if: steps.s.outputs.ok == '1'
+      - uses: actions/setup-python@v5
+        if: steps.s.outputs.ok == '1'
+        with: {python-version: '3.12'}
+      - if: steps.s.outputs.ok == '1'
+        run: pip install requests && python collector/ncm_cosmos.py
+      - name: Salvar resultado
+        if: steps.s.outputs.ok == '1'
+        run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data/ncm_ean.json collector/ref/*.json
+          git diff --cached --quiet && exit 0
+          git commit -m "NCM por EAN (cosmos): $(date -u +%F)"
+          for i in 1 2 3 4 5; do git pull --rebase -q && git push -q && exit 0; sleep $((i*7)); done; exit 1
