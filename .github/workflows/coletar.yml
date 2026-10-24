@@ -26,7 +26,7 @@ jobs:
       - name: Lojas no mapa + lojas fechadas (OpenStreetMap) — segundas-feiras
         continue-on-error: true
         run: |
-          if [ "$(date +%u)" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then python collector/stores_osm.py; python collector/closed_stores.py; fi
+          if [ "$(date +%u)" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then python collector/stores_osm.py; python collector/stores_oficial.py; python collector/closed_stores.py; fi
         env:
           MAPILLARY_TOKEN: ${{ secrets.MAPILLARY_TOKEN }}
           GOOGLE_STREETVIEW_KEY: ${{ secrets.GOOGLE_STREETVIEW_KEY }}
