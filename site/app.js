@@ -352,7 +352,7 @@ async function loadChain(id) {
 }
 
 // uma janela de loja por vez: abrir qualquer loja fecha as anteriores; Esc ou clique no mapa vazio fecham
-function closeAll() { $('panel').classList.add('hidden'); $('closed').classList.add('hidden'); cur = null; }
+function closeAll() { if (typeof acClose === 'function' && acState) acClose(); $('panel').classList.add('hidden'); $('closed').classList.add('hidden'); cur = null; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.activeElement !== $('gq')) closeAll(); });
 function openStore(s) {
   closeAll();
@@ -365,7 +365,7 @@ function openStore(s) {
     ${c.oldest ? ' · histórico desde ' + fmtDate(c.oldest) : ''}`;
   $('q').value = ''; $('pq').value = ''; MAIN = []; $('results').innerHTML = '';
   $('q').focus();
-  loadChain(s.c); // pré-carrega
+  loadChain(s.c).then(d => (window.requestIdleCallback || setTimeout)(() => acVocab(s.c, d)));  // pré-carrega catálogo e vocabulário do autocompletar
 }
 function openClosed(c) {
   closeAll();
@@ -719,3 +719,105 @@ $('geo').onsubmit = async e => {
   const r = sel >= 0 ? sugs[sel] : (await suggest($('gq').value))[0];
   if (r) go(r); else { $('gsug').hidden = false; $('gsug').innerHTML = '<div>Nenhuma cidade ou estado encontrado.</div>'; }
 };
+
+// ---- assistente de escrita (autocompletar) nos dois campos do painel da loja ----
+// Vocabulário montado uma vez por rede (em memória, sem localStorage) a partir do catálogo carregado:
+//  • campo de cima (#q, termos com "+"): 1ª palavra / 1ªs duas palavras dos nomes, categorias (no singular) e termos dos ícones/unidades;
+//  • campo de baixo (#pq): marcas (p.b) e palavras/pares de palavras dos nomes, com a grafia mais comum.
+// Contagem = nº de produtos cujo nome tem a palavra/expressão (o mesmo critério da busca). Começa com 2 letras, prefixo sem acento.
+const AC_STOP = new Set('de da do das dos com sem e em para ao a o as os na no por tipo un und unid ml g gr grs kg l lt lts cx pct pc pcs cm mm mg kit'.split(' '));
+const AC = {};
+function acVocab(id, d) {
+  if (AC[id]) return AC[id];
+  const df = new Map(), form = new Map(), first = new Map(), cats = new Map(), brands = new Map(), bform = new Map();
+  const bump = (m, k, n = 1) => m.set(k, (m.get(k) || 0) + n);
+  for (const p of d.list) {
+    const raw = (p.n || '').match(/[\p{L}]+(?:-[\p{L}]+)*/gu) || [], toks = raw.map(norm), seen = new Set();
+    for (let i = 0; i < toks.length; i++) {
+      const t = toks[i]; if (t.length < 2 || AC_STOP.has(t)) continue;
+      if (!seen.has(t)) { seen.add(t); bump(df, t); } bump(form, t + '\t' + raw[i]);
+      const j = i + 1 < toks.length && AC_STOP.has(toks[i + 1]) && /^d[eao]s?$/.test(toks[i + 1]) ? i + 2 : i + 1;  // "óleo de soja"
+      if (j < toks.length && toks[j].length >= 2 && !AC_STOP.has(toks[j])) {
+        const k = toks.slice(i, j + 1).join(' ');
+        if (!seen.has(k)) { seen.add(k); bump(df, k); } bump(form, k + '\t' + raw.slice(i, j + 1).join(' '));
+        if (i === 0) bump(first, k);
+      }
+      if (i === 0) bump(first, t);
+    }
+    if (p.c) bump(cats, norm(p.c));
+    if (p.b) { const k = norm(p.b).trim(); if (k.length >= 2) { bump(brands, k); bump(bform, k + '\t' + p.b.trim()); } }
+  }
+  // grafia mais comum de cada chave (marcas: como a loja escreve; nomes: como mais aparece)
+  const pick = m => { const B = new Map(); for (const [kf, n] of m) { const i = kf.indexOf('\t'), k = kf.slice(0, i), o = B.get(k); if (!o || n > o[1]) B.set(k, [kf.slice(i + 1), n]); } return B; };
+  const best = pick(form), bestB = pick(bform);
+  const sing = k => k.split(' ').map(w => w.length > 4 && w.endsWith('es') && df.has(w.slice(0, -2)) ? w.slice(0, -2) : w.length > 3 && w.endsWith('s') && df.has(w.slice(0, -1)) ? w.slice(0, -1) : w).join(' ');
+  // campo de cima
+  const C = new Map(), addC = k => { k = sing(k); const n = df.get(k); if (n && !AC_STOP.has(k)) C.set(k, n); };
+  for (const [k, n] of first) if (n >= (k.includes(' ') ? 3 : 2)) addC(k);
+  for (const k of cats.keys()) if (k.split(' ').length <= 3) addC(k);
+  const termos = [...ICONS.map(([re]) => re), ...UNIDADE_MEDIA.map(r => r.re), ...Object.values(BASICOS).map(b => b.re)]
+    .flatMap(re => (re.source.replace(/\\[bswd]/g, ' ').match(/[a-z]{3,}(?: [a-z]{3,})?/g) || []));
+  for (const t of termos) addC(t), addC(t.split(' ')[0]);
+  const cat = [...C].map(([k, n]) => ({k, d: (best.get(k)?.[0] || k).toLowerCase(), n})).sort((a, b) => b.n - a.n);
+  // campo de baixo
+  const P = new Map();
+  for (const [k, n] of df) if (n >= 2 || first.has(k)) P.set(k, {k, d: best.get(k)?.[0] || k, n});
+  for (const [k, n] of brands) { const d = bestB.get(k)?.[0] || k, o = P.get(k); P.set(k, {k, d, n: Math.max(n, o ? o.n : 0), b: 1}); }
+  const prod = [...P.values()].sort((a, b) => b.n - a.n || (b.b || 0) - (a.b || 0));
+  return AC[id] = {cat, prod};
+}
+// candidatos por prefixo; ordem: mais produtos, com bônus para marca e para quando o que foi digitado já é a 1ª palavra inteira ("red" → "Red Bull")
+function acCands(list, pref, max) {
+  const out = [];
+  for (const it of list) if (it.k.startsWith(pref) && it.k !== pref) out.push(it);
+  const sc = it => it.n * (it.b ? 2 : 1) * (it.k[pref.length] === ' ' ? 3 : 1);
+  return out.sort((a, b) => sc(b) - sc(a)).slice(0, max);
+}
+const acBox = document.createElement('div'); acBox.id = 'acbox'; acBox.hidden = true; acBox.setAttribute('role', 'listbox'); $('panel').appendChild(acBox);
+let acState = null, acT = null;  // {inp, items:[{it, before}], sel}
+function acClose() { acBox.hidden = true; acState = null; }
+function acDraw() {
+  const {inp, items, sel} = acState, F = inp.form, P = $('panel').getBoundingClientRect(), r = F.getBoundingClientRect(), cs = getComputedStyle(F);
+  const pl = parseFloat(cs.paddingLeft), pr = parseFloat(cs.paddingRight), ir = inp.getBoundingClientRect();
+  acBox.style.left = (r.left - P.left + pl) + 'px'; acBox.style.width = (r.width - pl - pr) + 'px'; acBox.style.top = (ir.bottom - P.top + 3) + 'px';
+  acBox.innerHTML = items.map(({it, typed, base}, i) => { const d = it.d, m = Math.min(typed, d.length), pre = base.slice(inp.id === 'q' ? base.lastIndexOf('+') + 1 : 0).trim();
+    return `<div class="aci${i === sel ? ' on' : ''}" role="option" data-i="${i}"><span class="act">${pre ? `<i>${esc(pre)} </i>` : ''}<b>${esc(d.slice(0, m))}</b>${esc(d.slice(m))}</span><small>${it.n}</small></div>`; }).join('');
+  acBox.hidden = false;
+}
+async function acUpdate(inp) {
+  if (!cur || document.activeElement !== inp) return acClose();
+  const top = inp.id === 'q', v = inp.value, cut = top ? v.lastIndexOf('+') + 1 : 0;  // em cima: só o termo depois do último "+"
+  const lead = v.slice(cut).match(/^\s*/)[0], termo = v.slice(cut + lead.length), pref = norm(termo).replace(/\s+/g, ' ');
+  if (pref.replace(/\s/g, '').length < 2 || /\s$/.test(termo)) return acClose();
+  const myCur = cur, d = await loadChain(cur.c); if (myCur !== cur || document.activeElement !== inp) return;
+  const list = (V => top ? V.cat : V.prod)(acVocab(cur.c, d)), antes = v.slice(0, cut) + lead;
+  const items = acCands(list, pref, 6).map(it => ({it, base: antes, typed: termo.length}));
+  // várias palavras: também completa só a última, mantendo as anteriores (um tamanho como "500ml" fica como está)
+  const sp = termo.lastIndexOf(' '), last = sp > 0 ? norm(termo.slice(sp + 1)) : '';
+  if (items.length < 6 && last.length >= 2 && !/^\d/.test(last))
+    for (const it of acCands(list, last, 6)) { if (items.length >= 6) break; if (!items.some(x => x.it.k === it.k)) items.push({it, base: antes + termo.slice(0, sp + 1), typed: last.length}); }
+  if (!items.length) return acClose();
+  acState = {inp, items, sel: -1}; acDraw();
+}
+function acPick(i) {
+  const s = acState; if (!s || !s.items[i]) return;
+  const {inp} = s, x = s.items[i];
+  inp.value = x.base + x.it.d; acClose(); inp.focus();
+  if (inp.id === 'q') $('sform').requestSubmit(); else render();
+}
+for (const inp of [$('q'), $('pq')]) {
+  inp.addEventListener('input', () => { clearTimeout(acT); acT = setTimeout(() => acUpdate(inp), 120); });
+  inp.addEventListener('focus', () => { clearTimeout(acT); acT = setTimeout(() => acUpdate(inp), 120); });
+  inp.addEventListener('blur', () => setTimeout(() => { if (acState && acState.inp === inp && document.activeElement !== inp) acClose(); }, 150));
+  inp.addEventListener('keydown', e => {
+    const s = acState; if (!s || s.inp !== inp || acBox.hidden) return;
+    const n = s.items.length;
+    if (e.key === 'ArrowDown') { e.preventDefault(); s.sel = (s.sel + 1) % n; acDraw(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); s.sel = (s.sel - 1 + n) % n; acDraw(); }
+    else if (e.key === 'Enter') { if (s.sel >= 0) { e.preventDefault(); acPick(s.sel); } else acClose(); }
+    else if (e.key === 'Tab') { if (!e.shiftKey) { e.preventDefault(); acPick(Math.max(s.sel, 0)); } }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); acClose(); }
+  });
+}
+acBox.addEventListener('pointerdown', e => e.preventDefault());  // não tira o foco do campo
+acBox.addEventListener('click', e => { const el = e.target.closest('.aci'); if (el) acPick(+el.dataset.i); });
