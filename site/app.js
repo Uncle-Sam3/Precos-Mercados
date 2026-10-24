@@ -76,14 +76,36 @@ function robust(vals) {
   const kept = n >= 4 ? v.filter(x => x >= q1 - 1.5 * iqr && x <= q3 + 1.5 * iqr) : v;
   return {med, mean: kept.reduce((a, b) => a + b, 0) / kept.length, n, kept: kept.length};
 }
-function termStats(core) {
+// unidade da média por grupo de produto (configurável): o que faz sentido para quem compra.
+// u: 'un' = por unidade/embalagem · 'duzia' = por dúzia (ovos) · 'pacote' = por pacote · 'kg' / 'L' = por peso/volume.
+// A primeira regra que casar com o termo pesquisado vale; se nenhuma casar, testa a categoria da maioria dos produtos.
+const UNIDADE_MEDIA = [
+  {re: /\bovos?\b/, u: 'duzia'},
+  {re: /papel higienico|papel toalha|guardanapo|lenco de papel|fralda|absorvente/, u: 'pacote'},
+  {re: /salgadinho|chips|snack|batata (frita|chips|palha)|pipoca de micro|amendoim japones|biscoito|bolacha|cookie|wafer|chocolate|bombom|barra de cereal|chiclete|goma de mascar|\bbalas?\b|pirulito|pilha|bateria|lampada|escova|desodorante|sabonete|sabao em barra|creme dental|pasta de dente|fio dental|aparelho de barbear|lamina|esponja|vela|isqueiro|fosforo|picole|sorvete|iogurte|petit suisse|bebida lactea|refrigerante lata|cerveja lata/, u: 'un'},
+  {re: /carne|picanha|alcatra|maminha|costela|patinho|acem|frango|peito|coxa|linguica|bacon|peixe|file|camarao|arroz|feijao|farinha|fuba|acucar|cafe|sal\b|batata|tomate|cebola|banana|maca|laranja|limao|cenoura|queijo|presunto|mortadela|macarrao|massa/, u: 'kg'},
+  {re: /oleo|azeite|leite|suco|refrigerante|agua|cerveja|vinho|bebida|detergente|amaciante|desinfetante|sabao liquido|lava roupas|agua sanitaria|alvejante|vinagre/, u: 'L'},
+];
+const ROT_UN = {un: 'unidade', duzia: 'dúzia', pacote: 'pacote', kg: 'kg', L: 'L'};
+function unidadeDe(q, core) {
+  const n = norm(q || ''); for (const r of UNIDADE_MEDIA) if (r.re.test(n)) return r.u;
+  const cats = {}; for (const p of core) { const c = norm(p.c || ''); for (const r of UNIDADE_MEDIA) if (r.re.test(c)) { cats[r.u] = (cats[r.u] || 0) + 1; break; } }
+  const best = Object.entries(cats).sort((a, b) => b[1] - a[1])[0];
+  return best && best[1] * 2 >= core.length ? best[0] : null;
+}
+const nOvos = n => { n = norm(n); if (/\bduzia\b/.test(n) && !/meia duzia/.test(n)) return 12; if (/meia duzia/.test(n)) return 6;
+  const m = n.match(/\b(?:c\/|com|cx\.?\s?c\/)?\s?(\d{1,2})\s?(?:un|unid|unidades|ovos)\b/) || n.match(/\bc\/\s?(\d{1,2})\b/); return m ? +m[1] : null; };
+function termStats(core, q) {
   const live = core.filter(p => !p.arch && !p.x), base = live.length ? live : core;
+  const forc = unidadeDe(q, base);
+  if (forc === 'un' || forc === 'pacote') return {unit: forc, ...robust(base.map(p => p.last[1]))};
+  if (forc === 'duzia') { const sel = base.filter(p => nOvos(p.n)); if (sel.length) return {unit: 'duzia', ...robust(sel.map(p => p.last[1] * 12 / nOvos(p.n)))}; }  // sem contagem (ex.: ovo de codorna em conserva): cai no peso
   const withQ = base.filter(p => p.qu);
   const nkg = withQ.filter(p => p.qu.u === 'kg').length, nl = withQ.length - nkg;
-  const unit = nkg >= nl ? 'kg' : 'L';
+  const unit = forc === 'kg' || forc === 'L' ? (withQ.some(p => p.qu.u === forc) ? forc : (nkg >= nl ? 'kg' : 'L')) : (nkg >= nl ? 'kg' : 'L');
   const sel = withQ.filter(p => p.qu.u === unit);
   if (sel.length) return {unit, ...robust(sel.map(p => p.last[1] / p.qu.q))};
-  return {unit: 'un', ...robust(base.map(p => p.last[1]))};
+  return {unit: 'un', semPeso: true, ...robust(base.map(p => p.last[1]))};
 }
 const perUnit = (p, price) => p.qu ? price / p.qu.q : null;
 const iconFor = q => { const n = norm(q); for (const [re, ic] of ICONS) if (re.test(n)) return ic; return '🛒'; };
@@ -91,59 +113,129 @@ const storeSvg = color => `<svg width="30" height="30" viewBox="0 0 30 30" style
 <path d="M7 10.5 h16 l-1.5 4 H8.5z M8.5 14.5 v7 h13 v-7" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><rect x="13" y="17.5" width="4" height="4" fill="#fff"/></svg>`;
 // cores por nível de histórico (regra calculada em collector/build_index.py: FULL_MIN_SHARE=50%, FULL_MIN_YEARS=2)
 const HIST_COLORS = {none: '#cf2b35', partial: '#f2c230', full: '#2f7cf6', rj: '#f28c28'};
-const closedIcon = L.divIcon({className: 'storeicon', iconSize: [30, 30], iconAnchor: [15, 15], html: `<svg width="30" height="30" viewBox="0 0 30 30" style="overflow:visible"><circle cx="15" cy="15" r="13.5" fill="#6b6b6b" stroke="#ddd" stroke-width="1.8"/>
-<path d="M7 10.5 h16 l-1.5 4 H8.5z M8.5 14.5 v7 h13 v-7" fill="none" stroke="#bbb" stroke-width="1.4"/><path d="M8 8 L22 22 M22 8 L8 22" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`});
-const icons = {};
-const mkIcon = lv => icons[lv] ||= L.divIcon({className: 'storeicon', html: storeSvg(HIST_COLORS[lv] || HIST_COLORS.none), iconSize: [30, 30], iconAnchor: [15, 15]});
-
-// ===== MAPAS BASE (3 opções; padrão = 'preto'; a escolha fica salva no navegador) =====
+// ===== MAPA: um único mapa MapLibre GL. Base (vetorial ou raster), máscara pontilhada fora do Brasil, sombra,
+// contorno da busca e ícones das lojas são camadas do MESMO canvas WebGL — tudo se move junto, sem DOM sobre o mapa.
 const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 const BASEMAPS = {
-  preto: {nome: 'Preto minimalista', thumb: 'assets/maps/preto.jpg',
-    make: () => L.maplibreGL ? L.maplibreGL({style: 'https://tiles.openfreemap.org/styles/dark', attribution: `<a href="https://openfreemap.org">OpenFreeMap</a> ${OSM_ATTR}`}) : null},
-  cinza: {nome: 'Cinza escuro', thumb: 'assets/maps/cinza.jpg',
-    make: () => L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-      {maxZoom: 16, attribution: 'Tiles &copy; Esri — Esri, HERE, Garmin, &copy; OpenStreetMap contributors, and the GIS User Community'})},
-  detalhado: {nome: 'Escuro detalhado', thumb: 'assets/maps/detalhado.jpg',
-    make: () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: OSM_ATTR, className: 'tiles-invert'})},
+  preto: {nome: 'Preto minimalista', thumb: 'assets/maps/preto.jpg'},
+  cinza: {nome: 'Cinza escuro', thumb: 'assets/maps/cinza.jpg'},
+  detalhado: {nome: 'Escuro detalhado', thumb: 'assets/maps/detalhado.jpg'},
 };
-const BASEMAP_PADRAO = 'detalhado';   // sempre abre em Escuro detalhado; a troca vale só para esta visita
-let baseLayer = null, baseKey = null, refLayer = null;
+const BASEMAP_PADRAO = 'detalhado';   // sempre abre em Escuro detalhado (OSM invertido); a troca vale só para esta visita
+let baseKey = null;
 // ---- rótulos (nomes de ruas / bairros) ----
 const LBL = Object.assign({ruas: false, bairros: true},  // nomes de ruas ocultos por padrão
   JSON.parse(localStorage.getItem('rotulos') || '{}'));
 const ML_LAYERS = {ruas: ['highway_name_other', 'highway_name_motorway', 'road_oneway', 'road_oneway_opposite'], bairros: ['place_suburb', 'place_other']};
-// rótulos do estilo vetorial só dentro do Brasil (nenhum nome de cidade/rua de país vizinho)
-let BR_SIMPLES = null; fetch('data/geo/brasil-simples.json').then(r => r.json()).then(g => { BR_SIMPLES = g; applyLabels(); });
-function brOnlyLabels(ml) {
-  if (!BR_SIMPLES || ml._brOnly) return;
-  for (const l of ml.getStyle().layers) {
-    if (l.type !== 'symbol') continue;
-    const f = ml.getFilter(l.id), w = ['within', BR_SIMPLES];
-    try { ml.setFilter(l.id, f ? ['all', f, w] : w); } catch (e) { ml.setLayoutProperty(l.id, 'visibility', 'none'); }
+// camadas vetoriais pesadas ou inúteis aqui (prédios, aeroportos, trilhos urbanos, gelo, nomes de países)
+const PODA = /^(highway_major_inner|building|aeroway|road_area_pier|road_pier|railway_transit|railway_minor|landcover_ice|landcover_glacier|place_country)/;
+const MASK_HI_ZOOM = 7;           // zoom MapLibre (= 8 no Leaflet): a partir daqui contorno IBGE em alta resolução
+const MIN_ZOOM_LOJAS = 9;         // zoom MapLibre (= 10 no Leaflet)
+const WORLD = [[-110, -65], [-5, -65], [-5, 30], [-110, 30], [-110, -65]];
+const EMPTY = {type: 'FeatureCollection', features: []};
+const DATA = {'br-lo': EMPTY, 'br-hi': EMPTY, 'mask-lo': EMPTY, 'mask-hi': EMPTY, lojas: EMPTY, busca: EMPTY};
+const GEOC = {};
+const getJ = u => GEOC[u] ||= fetch(u).then(r => r.json());
+const feat_ = g => g.type === 'Feature' ? g : {type: 'Feature', properties: {}, geometry: g};
+const maskOf = br => ({type: 'Feature', properties: {}, geometry: {type: 'Polygon', coordinates: [WORLD, ...(br.geometry || br).coordinates.map(p => p[0].slice().reverse())]}});
+function setSrc(id, data) { DATA[id] = data; const s = map && map.getSource(id); if (s) s.setData(data); }
+let OFM = null, BR_LO = null, FORCE = null;
+const hiOk = () => DATA['br-hi'] !== EMPTY;
+function ourLayers() {
+  const hi = hiOk(), shadow = (src, minz, maxz) => [[3, 1.5, 0.42, 1.5], [9, 4.5, 0.22, 5], [20, 10, 0.12, 10]].map(([w, o, op, bl], i) => ({
+    id: `sombra-${src}-${i}`, type: 'line', source: src, minzoom: minz, maxzoom: maxz,
+    paint: {'line-color': '#000', 'line-width': w, 'line-offset': o, 'line-opacity': op, 'line-blur': bl}}));
+  return [
+    {id: 'busca-fill', type: 'fill', source: 'busca', paint: {'fill-color': '#2f7cf6', 'fill-opacity': 0.06}},
+    {id: 'mask-lo', type: 'fill', source: 'mask-lo', maxzoom: hi ? MASK_HI_ZOOM : 24, paint: {'fill-pattern': 'pontilhado', 'fill-antialias': false}},
+    {id: 'mask-hi', type: 'fill', source: 'mask-hi', minzoom: MASK_HI_ZOOM, paint: {'fill-pattern': 'pontilhado', 'fill-antialias': false}},
+    ...shadow('br-lo', 0, hi ? MASK_HI_ZOOM : 24), ...shadow('br-hi', MASK_HI_ZOOM, 24),
+    {id: 'contorno-lo', type: 'line', source: 'br-lo', maxzoom: MASK_HI_ZOOM, paint: {'line-color': '#2f7cf6', 'line-width': 1, 'line-opacity': 0.35}},
+    {id: 'busca-glow', type: 'line', source: 'busca', paint: {'line-color': '#2f7cf6', 'line-width': 10, 'line-blur': 7, 'line-opacity': 0.55}},
+    {id: 'busca-line', type: 'line', source: 'busca', paint: {'line-color': '#3b8cff', 'line-width': 2.5, 'line-opacity': 0.95}},
+    {id: 'lojas', type: 'symbol', source: 'lojas', minzoom: MIN_ZOOM_LOJAS, layout: {'icon-image': ['get', 'k'], 'icon-allow-overlap': true, 'icon-ignore-placement': true},
+      paint: {'icon-opacity': ['case', ['boolean', ['feature-state', 'anim'], false], 0, 1]}},
+    {id: 'lojas-rede', type: 'symbol', source: 'lojas', maxzoom: MIN_ZOOM_LOJAS, filter: ['==', ['get', 'c'], FORCE || '-'],
+      layout: {'icon-image': ['get', 'k'], 'icon-allow-overlap': true, 'icon-ignore-placement': true},
+      paint: {'icon-opacity': ['case', ['boolean', ['feature-state', 'anim'], false], 0, 1]}},
+  ];
+}
+function ourSources() {
+  const o = {}; for (const [k, v] of Object.entries(DATA)) o[k] = {type: 'geojson', data: v, ...(k === 'lojas' ? {} : k === 'br-lo' ? {tolerance: 0.6, buffer: 256, maxzoom: 7} : k === 'mask-lo' ? {tolerance: 0.6, maxzoom: 7} : k === 'br-hi' ? {tolerance: 0.6, buffer: 256} : {tolerance: 0.6})};
+  return o;
+}
+async function buildStyle(key) {
+  let s;
+  if (key === 'preto') {
+    OFM ||= await fetch('https://tiles.openfreemap.org/styles/dark').then(r => r.json());
+    s = structuredClone(OFM);
+    s.layers = s.layers.filter(l => !PODA.test(l.id));
+    const vis = {}; for (const [k, ids] of Object.entries(ML_LAYERS)) for (const id of ids) vis[id] = LBL[k] ? 'visible' : 'none';
+    for (const l of s.layers) {
+      if (l.id === 'highway_minor') l.minzoom = 13;          // ruas locais: só bem de perto (era o maior custo de desenho)
+      if (l.id === 'highway_path') l.minzoom = 15;
+      if (l.id === 'highway_major_casing') { delete l.paint['line-dasharray']; l.paint['line-color'] = '#2c2c2c'; l.paint['line-width'] = ['interpolate', ['exponential', 1.3], ['zoom'], 10, 1.6, 20, 20]; }
+      if (l.id === 'highway_motorway_casing') delete l.paint['line-dasharray'];
+      if (l.type !== 'symbol') continue;
+      if (BR_LO) l.filter = l.filter ? ['all', l.filter, ['within', BR_LO]] : ['within', BR_LO];   // nenhum nome de país vizinho
+      if (vis[l.id]) l.layout = {...l.layout, visibility: vis[l.id]};
+      if (l.id === 'highway_name_other' || l.id === 'highway_name_motorway') l.paint = {...l.paint, 'text-color': '#f2c230', 'text-halo-width': 0};  // ruas em amarelo
+    }
+  } else {
+    const esri = n => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_${n}/MapServer/tile/{z}/{y}/{x}`;
+    s = {version: 8, sources: {}, layers: [{id: 'background', type: 'background', paint: {'background-color': '#1a1a1a'}}]};
+    if (key === 'cinza') {
+      s.sources.esri = {type: 'raster', tiles: [esri('Base')], tileSize: 256, maxzoom: 16, attribution: 'Tiles &copy; Esri — Esri, HERE, Garmin, &copy; OpenStreetMap contributors, and the GIS User Community'};
+      s.sources.esriRef = {type: 'raster', tiles: [esri('Reference')], tileSize: 256, maxzoom: 16, attribution: 'Rótulos &copy; Esri'};
+      s.layers.push({id: 'esri', type: 'raster', source: 'esri'},
+        {id: 'esri-ref', type: 'raster', source: 'esriRef', minzoom: 5, layout: {visibility: LBL.ruas || LBL.bairros ? 'visible' : 'none'}});
+    } else {
+      s.sources.osm = {type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 19, attribution: OSM_ATTR};
+      // "escuro" sem filtro CSS: inversão por brilho (min 0,9 → max 0) + giro de matiz no próprio shader raster
+      s.layers.push({id: 'osm', type: 'raster', source: 'osm', paint: {'raster-brightness-min': 0.9, 'raster-brightness-max': 0, 'raster-hue-rotate': 180, 'raster-saturation': -0.3, 'raster-contrast': -0.1}});
+    }
   }
-  ml._brOnly = true;
+  Object.assign(s.sources, ourSources());
+  s.layers.push(...ourLayers());
+  return s;
+}
+// imagens do mapa (ícones das lojas e padrão pontilhado) — 2x para telas retina
+const IMG = {};
+function svgImg(svg) { return new Promise(res => { const im = new Image(60, 60); im.onload = () => res(im); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.replace('width="30" height="30"', 'width="60" height="60"')); }); }
+const CLOSED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="-2 -2 34 34"><circle cx="15" cy="16" r="13.5" fill="#000" opacity=".45"/><circle cx="15" cy="15" r="13.5" fill="#6b6b6b" stroke="#ddd" stroke-width="1.8"/>
+<path d="M7 10.5 h16 l-1.5 4 H8.5z M8.5 14.5 v7 h13 v-7" fill="none" stroke="#bbb" stroke-width="1.4"/><path d="M8 8 L22 22 M22 8 L8 22" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+const glSvg = color => storeSvg(color).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ').replace('viewBox="0 0 30 30" style="overflow:visible">', 'viewBox="-2 -2 34 34"><circle cx="15" cy="16" r="13.5" fill="#000" opacity=".45"/>');
+const IMG_READY = Promise.all([...Object.entries(HIST_COLORS).map(async ([k, c]) => IMG['loja-' + k] = await svgImg(glSvg(c))), svgImg(CLOSED_SVG).then(im => IMG['loja-fechada'] = im)]).then(() => {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 44; const g = cv.getContext('2d');
+  g.fillStyle = '#1a1a1a'; g.fillRect(0, 0, 44, 44); g.fillStyle = 'rgba(255,255,255,0.16)'; g.beginPath(); g.arc(22, 22, 2.8, 0, 7); g.fill();
+  IMG.pontilhado = g.getImageData(0, 0, 44, 44);
+});
+function addImgs() { for (const [k, im] of Object.entries(IMG)) if (!map.hasImage(k)) map.addImage(k, im, {pixelRatio: 2}); }
+
+let map = null;
+async function setBasemap(key) {
+  if (!BASEMAPS[key]) key = BASEMAP_PADRAO;
+  let st;
+  try { st = await buildStyle(key); } catch (e) { key = 'cinza'; st = await buildStyle(key); }   // OpenFreeMap fora do ar
+  baseKey = key;
+  if (!map) {
+    map = new maplibregl.Map({container: 'map', style: st, bounds: [[-73.9, -33.8], [-34.8, 5.3]], fitBoundsOptions: {padding: 10},
+      maxBounds: [[-82, -40], [-25, 12]], minZoom: 2.5, maxZoom: 18.5, renderWorldCopies: false, dragRotate: false, pitchWithRotate: false,
+      attributionControl: false, pixelRatio: Math.min(devicePixelRatio || 1, 2), fadeDuration: 150});
+    map.touchZoomRotate.disableRotation(); map.keyboard.disableRotation();
+    map.addControl(new maplibregl.AttributionControl({compact: true}), 'bottom-right');
+    map.on('styleimagemissing', e => { if (IMG[e.id] && !map.hasImage(e.id)) map.addImage(e.id, IMG[e.id], {pixelRatio: 2}); });
+    map.on('style.load', addImgs);
+    wireMap();
+  } else map.setStyle(st, {diff: false});
+  drawLabelUI();
+  document.querySelectorAll('#bmenu .opt').forEach(o => o.classList.toggle('on', o.dataset.k === key));
 }
 function applyLabels() {
   localStorage.setItem('rotulos', JSON.stringify(LBL));
-  if (baseKey === 'preto') {
-    const ml = baseLayer && baseLayer.getMaplibreMap && baseLayer.getMaplibreMap();
-    if (!ml || !ml.getStyle || !ml.isStyleLoaded()) return;
-    for (const [k, ids] of Object.entries(ML_LAYERS)) for (const id of ids)
-      if (ml.getLayer(id) && ml.getLayoutProperty(id, 'visibility') !== (LBL[k] ? 'visible' : 'none')) ml.setLayoutProperty(id, 'visibility', LBL[k] ? 'visible' : 'none');
-    brOnlyLabels(ml);
-    for (const id of ['place_country_other', 'place_country_minor', 'place_country_major'])  // sem nome de país ("Brazil")
-      if (ml.getLayer(id) && ml.getLayoutProperty(id, 'visibility') !== 'none') ml.setLayoutProperty(id, 'visibility', 'none');
-    for (const id of ['highway_name_other', 'highway_name_motorway'])  // nomes de ruas em amarelo para leitura
-      if (ml.getLayer(id) && ml.getPaintProperty(id, 'text-color') !== '#f2c230') {
-        ml.setPaintProperty(id, 'text-color', '#f2c230'); ml.setPaintProperty(id, 'text-halo-width', 0);
-      }
-  } else if (baseKey === 'cinza') {
-    const on = LBL.ruas || LBL.bairros;
-    if (on && !refLayer) refLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
-      {maxZoom: 16, minZoom: 6, pane: 'labels', attribution: 'Rótulos &copy; Esri'}).addTo(map);
-    if (!on && refLayer) { map.removeLayer(refLayer); refLayer = null; }
-  }
+  if (!map || !map.isStyleLoaded()) return;
+  if (baseKey === 'preto') { for (const [k, ids] of Object.entries(ML_LAYERS)) for (const id of ids) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', LBL[k] ? 'visible' : 'none'); }
+  else if (baseKey === 'cinza' && map.getLayer('esri-ref')) map.setLayoutProperty('esri-ref', 'visibility', LBL.ruas || LBL.bairros ? 'visible' : 'none');
 }
 function drawLabelUI() {
   const btn = $('lbtn'), m = $('lmenu'); if (!btn) return;
@@ -158,129 +250,61 @@ function drawLabelUI() {
     applyLabels(); drawLabelUI();
   });
 }
-function setBasemap(key) {
-  if (!BASEMAPS[key]) key = BASEMAP_PADRAO;
-  let layer = BASEMAPS[key].make();
-  if (!layer) { key = 'cinza'; layer = BASEMAPS.cinza.make(); }  // MapLibre indisponível
-  if (baseLayer) map.removeLayer(baseLayer);
-  baseLayer = layer.addTo(map); baseKey = key;
-  if (baseLayer.bringToBack) baseLayer.bringToBack();
-  if (refLayer) { map.removeLayer(refLayer); refLayer = null; }
-  if (key === 'preto') { const ml = baseLayer.getMaplibreMap && baseLayer.getMaplibreMap(); if (ml) { ml.on('styledata', applyLabels); ml.on('load', applyLabels); ml.on('idle', applyLabels); } }
-  applyLabels(); drawLabelUI();
-  document.querySelectorAll('#bmenu .opt').forEach(o => o.classList.toggle('on', o.dataset.k === key));
+// contorno em alta resolução: baixado só quando o zoom chega perto do nível em que ele aparece
+function loadHi() {
+  if (loadHi.p || !map || map.getZoom() < MASK_HI_ZOOM - 1.5) return;
+  loadHi.p = getJ('data/geo/gl-brasil-hi.json').then(g => {
+    setSrc('br-hi', feat_(g)); setSrc('mask-hi', maskOf(g));
+    for (const id of ['mask-lo', 'sombra-br-lo-0', 'sombra-br-lo-1', 'sombra-br-lo-2']) if (map.getLayer(id)) map.setLayerZoomRange(id, 0, MASK_HI_ZOOM);
+  });
 }
-const map = L.map('map', {zoomControl: false, minZoom: 4, maxZoom: 18, maxBounds: [[-40, -82], [12, -25]], maxBoundsViscosity: 0.9, scrollWheelZoom: true, doubleClickZoom: true, touchZoom: true}).fitBounds([[-33.8, -73.9], [5.3, -34.8]]);
-map.attributionControl.setPrefix(false);
-// créditos compactos: botão "i" que mostra a atribuição (exigida pelas licenças OSM/Esri/OpenFreeMap)
-(() => { const el = map.attributionControl.getContainer(); el.classList.add('compact');
-  const C = L.Control.extend({options: {position: 'bottomright'}, onAdd() {
-    const b = L.DomUtil.create('button', 'attr-i'); b.type = 'button'; b.textContent = 'i'; b.title = 'Créditos do mapa';
-    L.DomEvent.on(b, 'click', e => { L.DomEvent.stop(e); el.classList.toggle('open'); }); return b; }});
-  new C().addTo(map); })();
-map.createPane('mask'); map.getPane('mask').style.zIndex = 350; map.getPane('mask').style.pointerEvents = 'none';
-map.createPane('labels'); map.getPane('labels').style.zIndex = 300; map.getPane('labels').style.pointerEvents = 'none';  // rótulos Esri: abaixo da máscara
-// máscara: cobre tudo fora do Brasil (limites IBGE) em todos os estilos — some países vizinhos e seus rótulos
-const maskRenderer = L.svg({pane: 'mask', padding: 0.6});
-// Baixa resolução (zoom < 8): data/geo/mascara.json. Alta resolução (zoom >= 8): células de 2° com o contorno IBGE
-// em resolução cheia (ilhas incluídas) — só as células da área visível são baixadas (data/geo/cel/*.json).
-const MASK_HI_ZOOM = 8, NS = 'http://www.w3.org/2000/svg';
-const MASK_STYLE_LO = {stroke: true, color: '#2f7cf6', weight: 1, opacity: 0.35, fillColor: 'url(#pontilhado)', fillOpacity: 1};
-const MASK_STYLE_HI = {stroke: false, fillColor: 'url(#pontilhado)', fillOpacity: 1};
-const CLIP_STYLE = {stroke: false, fill: false};
-const maskFora = L.geoJSON(null, {renderer: maskRenderer, interactive: false}).addTo(map);   // fora do Brasil (pontilhado)
-const maskDentro = L.geoJSON(null, {renderer: maskRenderer, interactive: false, style: CLIP_STYLE}).addTo(map); // Brasil (recorte)
-const GEOC = {}; let maskKey = '', LO = null, CELIDX = null;
-const getJ = u => GEOC[u] ||= fetch(u).then(r => r.json());
-function maskDefs() {
-  const svg = maskRenderer._container; if (!svg || svg.querySelector('#pontilhado')) return;
-  const defs = document.createElementNS(NS, 'defs');
-  defs.innerHTML = `<pattern id="pontilhado" patternUnits="userSpaceOnUse" width="22" height="22"><rect width="22" height="22" fill="#1a1a1a"/><circle cx="11" cy="11" r="1.4" fill="rgba(255,255,255,0.16)"/></pattern>
-    <filter id="sombra-brasil" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
-      <feComponentTransfer in="SourceAlpha" result="inv"><feFuncA type="table" tableValues="1 0"/></feComponentTransfer>
-      <feOffset in="inv" dx="6" dy="7" result="off"/><feGaussianBlur in="off" stdDeviation="7" result="blur"/>
-      <feComposite in="blur" in2="SourceAlpha" operator="in" result="sh"/>
-      <feFlood flood-color="#000" flood-opacity="0.65"/><feComposite in2="sh" operator="in" result="sombra"/>
-      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="sombra"/></feMerge>
-    </filter>
-    <clipPath id="recorte-brasil" clipPathUnits="userSpaceOnUse"><path d="M0 0"/></clipPath>`;
-  svg.insertBefore(defs, svg.firstChild);
-  // sombra do Brasil sobre o pontilhado: aplicada ao grupo inteiro (sem emendas entre células)
-  const gEl = svg.querySelector('g'); if (gEl) gEl.setAttribute('filter', 'url(#sombra-brasil)');
-}
-// recorta tiles raster, canvas MapLibre e rótulos no contorno do Brasil: nada de outro país aparece nem ao arrastar
-function syncClip() {
-  const cpp = maskRenderer._container && maskRenderer._container.querySelector('#recorte-brasil path'); if (!cpp) return;
-  let d = ''; maskDentro.eachLayer(l => { if (l._path) d += l._path.getAttribute('d') || ''; });
-  cpp.setAttribute('d', d || 'M0 0');
-  for (const pn of ['tilePane', 'labels']) { const el = map.getPane(pn); if (el) el.style.clipPath = 'url(#recorte-brasil)'; }
-}
-const holesOf = g => (g.type === 'Polygon' ? [g.coordinates] : g.coordinates).flatMap(p => p.slice(1).map(r => [r]));
-async function updateMask() {
-  const z = map.getZoom();
-  if (z < MASK_HI_ZOOM) {
-    if (maskKey === 'lo') return;
-    LO ||= await getJ('data/geo/mascara.json');
-    if (map.getZoom() >= MASK_HI_ZOOM) return;
-    maskKey = 'lo'; maskFora.clearLayers(); maskDentro.clearLayers();
-    maskFora.options.style = MASK_STYLE_LO; maskFora.addData(LO);
-    maskDentro.addData({type: 'MultiPolygon', coordinates: holesOf(LO)});
-  } else {
-    CELIDX ||= await getJ('data/geo/cel/indice.json');
-    const b = map.getBounds().pad(0.7), cells = [];
-    for (let x = Math.floor(b.getWest() / 2) * 2; x < b.getEast(); x += 2)
-      for (let y = Math.floor(b.getSouth() / 2) * 2; y < b.getNorth(); y += 2) cells.push([x, y]);
-    const key = cells.map(c => c.join('_')).join(',');
-    if (key === maskKey) return;
-    const parts = await Promise.all(cells.map(async ([x, y]) => {
-      const t = CELIDX[`${x}_${y}`] ?? 0, bx = {type: 'Polygon', coordinates: [[[x, y], [x + 2, y], [x + 2, y + 2], [x, y + 2], [x, y]]]};
-      if (t === 2) { const c = await getJ(`data/geo/cel/${x}_${y}.json`); return [c.f, c.d]; }
-      return t === 1 ? [null, bx] : [bx, null];
-    }));
-    if (map.getZoom() < MASK_HI_ZOOM) return;
-    maskKey = key; maskFora.clearLayers(); maskDentro.clearLayers(); maskFora.options.style = MASK_STYLE_HI;
-    for (const [f, d] of parts) { if (f && f.coordinates.length) maskFora.addData(f); if (d && d.coordinates.length) maskDentro.addData(d); }
+function wireMap() {
+  const LAY = ['lojas', 'lojas-rede'];
+  map.on('click', e => {
+    $('bmenu').hidden = true; $('lmenu').hidden = true;
+    const r = 8, f = map.queryRenderedFeatures([[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]], {layers: LAY.filter(l => map.getLayer(l))});
+    if (f.length) { const it = ALL[f[0].properties.i]; if (it) { audioInit(); it.open(); return; } }
+    closeAll();
+  });
+  const tip = new maplibregl.Popup({closeButton: false, closeOnClick: false, offset: 16, className: 'tip'});
+  for (const l of LAY) {
+    map.on('mouseenter', l, e => { map.getCanvas().style.cursor = 'pointer'; const it = ALL[e.features[0].properties.i]; if (it && it.tip) tip.setLngLat([it.lon, it.lat]).setText(it.tip).addTo(map); });
+    map.on('mouseleave', l, () => { map.getCanvas().style.cursor = ''; tip.remove(); });
   }
-  maskDefs(); syncClip();
-}
-maskRenderer.on('update', () => setTimeout(syncClip, 0));
-map.on('zoomend moveend viewreset', () => { updateMask(); setTimeout(syncClip, 0); });
-updateMask();
-try { localStorage.removeItem('mapa'); } catch (e) {}
-setBasemap(BASEMAP_PADRAO);
-$('bmenu').innerHTML = Object.entries(BASEMAPS).map(([k, b]) => `<button class="opt${k === baseKey ? ' on' : ''}" data-k="${k}"><img src="${b.thumb}" alt=""><span>${b.nome}</span></button>`).join('');
+  map.on('moveend', refreshMarkers);
+  map.on('zoom', () => { if (ALL.length) $('zhint').hidden = map.getZoom() >= MIN_ZOOM_LOJAS || !!FORCE; });
+  map.on('moveend', loadHi);
+  }
+Promise.all([getJ('data/geo/gl-brasil-lo.json'), IMG_READY]).then(([lo]) => {
+  BR_LO = lo; DATA['br-lo'] = feat_(lo); DATA['mask-lo'] = maskOf(lo);
+  return (localStorage.removeItem('mapa'), setBasemap(BASEMAP_PADRAO));
+}).then(() => { init(); loadHi(); });
+$('bmenu').innerHTML = Object.entries(BASEMAPS).map(([k, b]) => `<button class="opt" data-k="${k}"><img src="${b.thumb}" alt="" loading="lazy"><span>${b.nome}</span></button>`).join('');
 $('bmenu').querySelectorAll('.opt').forEach(o => o.onclick = () => { setBasemap(o.dataset.k); $('bmenu').hidden = true; });
 $('bbtn').onclick = e => { e.stopPropagation(); $('lmenu').hidden = true; $('bmenu').hidden = !$('bmenu').hidden; };
 $('lbtn').onclick = e => { e.stopPropagation(); $('bmenu').hidden = true; $('lmenu').hidden = !$('lmenu').hidden; };
-drawLabelUI();
-map.on('click', () => { $('bmenu').hidden = true; $('lmenu').hidden = true; });
 
 let CH = {}, cache = {}, cur = null;
 
-// ---- marcadores sob demanda: só com zoom >= MIN_ZOOM_LOJAS e dentro da área visível (+ margem) ----
-const MIN_ZOOM_LOJAS = 10;
-const ALL = [];   // {lat, lon, make() -> L.marker, mk (quando visível), cid}
-let FORCE = null;  // rede escolhida na busca: mostra todas as lojas dela mesmo com zoom baixo
+// ---- lojas: camada de símbolos WebGL (ícones aparecem com zoom >= MIN_ZOOM_LOJAS; rede escolhida na busca aparece sempre) ----
+const ALL = [];   // {lat, lon, cid, open(), tip}
 const STORES = [];
-let refreshT = 0;
+const padB = (b, f) => { const dx = (b.getEast() - b.getWest()) * f, dy = (b.getNorth() - b.getSouth()) * f;
+  return {w: b.getWest() - dx, e: b.getEast() + dx, s: b.getSouth() - dy, n: b.getNorth() + dy}; };
+let refreshT = 0, PREV = new Set();
+function setForce(cid) { FORCE = cid; if (map.getLayer('lojas-rede')) map.setFilter('lojas-rede', ['==', ['get', 'c'], FORCE || '-']); }
 function refreshMarkers() {
   clearTimeout(refreshT);
   refreshT = setTimeout(() => {
     const z = map.getZoom(), show = z >= MIN_ZOOM_LOJAS;
     $('zhint').hidden = show || !!FORCE || !ALL.length;
-    const b = map.getBounds().pad(0.15), novos = [];
-    for (const it of ALL) {
-      try {
-        const dentro = (show || (FORCE && it.cid === FORCE)) && b.contains([it.lat, it.lon]);
-        if (dentro && !it.mk) { it.mk = it.make().addTo(map); novos.push(it); }
-        else if (!dentro && it.mk) { map.removeLayer(it.mk); it.mk = null; }
-      } catch (e) { console.warn('marcador', e); }   // um item ruim não pode impedir os demais de aparecer
-    }
-    sproutNew(novos);
+    const b = padB(map.getBounds(), 0.15), vis = new Set(), novos = [];
+    ALL.forEach((it, i) => {
+      if ((show || (FORCE && it.cid === FORCE)) && it.lon >= b.w && it.lon <= b.e && it.lat >= b.s && it.lat <= b.n) { vis.add(i); if (!PREV.has(i)) novos.push(it); }
+    });
+    PREV = vis; sproutNew(novos);
   }, 150);
 }
-map.on('moveend zoomend viewreset resize', refreshMarkers);
-
 async function init() {
   const [chains, stores] = await Promise.all([fetch('data/chains.json').then(r => r.json()), fetch('data/stores.json').then(r => r.json())]);
   chains.forEach(c => CH[c.id] = c);
@@ -288,16 +312,14 @@ async function init() {
   for (const s of stores) {
     const c = CH[s.c]; if (!c || !c.n) continue; n++;
     STORES.push(s); s._k = norm(`${c.name} ${s.n || ''} ${s.a || ''} ${s.ci || ''} ${s.uf || ''}`);
-    ALL.push({lat: s.lat, lon: s.lon, cid: s.c, s, make: () => L.marker([s.lat, s.lon], {icon: mkIcon(c.hist_level), title: `${c.name} — ${s.n}`}).on('click', () => openStore(s))});
+    ALL.push({lat: s.lat, lon: s.lon, cid: s.c, k: 'loja-' + (HIST_COLORS[c.hist_level] ? c.hist_level : 'none'), s, open: () => openStore(s)});
   }
   const ok = chains.filter(c => c.n);
   $('stats').textContent = `${n} lojas · ${ok.length} redes · ${ok.reduce((a, c) => a + c.n, 0).toLocaleString('pt-BR')} produtos`;
-  refreshMarkers();
   const [closed, rj] = await Promise.all(['data/closed.json', 'data/rj.json'].map(u => fetch(u).then(r => r.ok ? r.json() : []).catch(() => [])));
-  for (const c of closed) ALL.push({lat: c.lat, lon: c.lon, make: () => L.marker([c.lat, c.lon], {icon: closedIcon})
-    .bindTooltip(c.ano ? `Fechado em ${c.ano}` : 'Fechado (ano não informado)', {direction: 'top', offset: [0, -14]}).on('click', () => openClosed(c))});
-  for (const c of rj) ALL.push({lat: c.lat, lon: c.lon, make: () => L.marker([c.lat, c.lon], {icon: mkIcon('rj')})
-    .bindTooltip(`${c.rede} — em recuperação judicial`, {direction: 'top', offset: [0, -14]}).on('click', () => openRJ(c))});
+  for (const c of closed) ALL.push({lat: c.lat, lon: c.lon, k: 'loja-fechada', tip: c.ano ? `Fechado em ${c.ano}` : 'Fechado (ano não informado)', open: () => openClosed(c)});
+  for (const c of rj) ALL.push({lat: c.lat, lon: c.lon, k: 'loja-rj', tip: `${c.rede} — em recuperação judicial`, open: () => openRJ(c)});
+  setSrc('lojas', {type: 'FeatureCollection', features: ALL.map((it, i) => ({type: 'Feature', id: i, properties: {i, k: it.k, c: it.cid || ''}, geometry: {type: 'Point', coordinates: [it.lon, it.lat]}}))});
   refreshMarkers();
 }
 
@@ -318,7 +340,6 @@ async function loadChain(id) {
 // uma janela de loja por vez: abrir qualquer loja fecha as anteriores; Esc ou clique no mapa vazio fecham
 function closeAll() { $('panel').classList.add('hidden'); $('closed').classList.add('hidden'); cur = null; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.activeElement !== $('gq')) closeAll(); });
-map.on('click', closeAll);
 function openStore(s) {
   closeAll();
   const c = CH[s.c]; cur = s;
@@ -400,10 +421,10 @@ function porEspecie(core) {
 }
 function termCard(R, q, titulo, hits, core, basic, nome, semMedia) {
   const box = document.createElement('div'); box.className = 'term'; R.appendChild(box);
-  const st = termStats(basic && basic.list ? basic.list : core);
-  const un = st.unit === 'un' ? 'un' : st.unit;
+  const st = termStats(basic && basic.list ? basic.list : core, q);
+  const un = ROT_UN[st.unit] || st.unit, porUn = ['un', 'duzia', 'pacote'].includes(st.unit);
   const avgTxt = semMedia ? '' : `${BRL(st.med)}/${un}`;
-  const avgSub = semMedia ? 'itens variados — sem média' : `mediana em ${esc(nome)} · média ${BRL(st.mean)}/${un} (${st.kept} de ${st.n} produtos${st.unit === 'un' ? ', sem peso/volume no nome' : ''})${basic ? (basic.none ? `<br>sem ${esc(basic.rot)} com preço nesta loja — média de todos os itens` : `<br>referência: ${esc(basic.rot)}`) : ''}`;
+  const avgSub = semMedia ? 'itens variados — sem média' : `${porUn ? `preço médio por ${un} (mediana)` : 'mediana'} em ${esc(nome)} · média ${BRL(st.mean)}/${un} (${st.kept} de ${st.n} produtos${st.semPeso ? ', sem peso/volume no nome' : ''})${basic ? (basic.none ? `<br>sem ${esc(basic.rot)} com preço nesta loja — média de todos os itens` : `<br>referência: ${esc(basic.rot)}`) : ''}`;
   box.innerHTML = `<div class="card"><div class="ico" style="font-size:34px">${iconFor(q)}</div>
     <div><div class="t">${esc(titulo)}</div><div class="sub">${hits.length} produto${hits.length > 1 ? 's' : ''} à venda em ${esc(nome)}${core.length < hits.length ? ` (${core.length} principais)` : ''} · clique para ver</div></div>
     <div class="avg"><b>${avgTxt}</b><div>${avgSub}</div></div></div><div class="list" hidden></div>`;
@@ -441,13 +462,38 @@ function rowEl(p) {
     const tx = document.createElement('div'); tx.className = 'tax'; tx.textContent = 'Tributos aproximados…';
     h.appendChild(tx); el.appendChild(h);
     taxBox(p, v, cur && cur.uf).then(html => tx.innerHTML = html);
+    h.querySelectorAll('.pr').forEach((pr, i) => semImp(pr, p, p.h[i][1]));
   };
+  semImp(el.querySelector('.pr'), p, v);
   return el;
 }
 // ---- tributos aproximados (Lei 12.741/2012, tabela oficial IBPT por NCM e UF da loja) ----
 const IBPT = {};
 let NCMR = null;
 const ncmRules = () => NCMR ||= fetch('data/ncm_regras.json').then(r => r.json()).then(d => ({...d, regras: d.regras.map(x => ({...x, rx: new RegExp(x.re)}))}));
+// alíquota aproximada total (%) do produto na UF: {tot, fed, es, mun, ncm, est, T} ou null
+async function taxInfo(p, uf) {
+  if (!uf) return null;
+  let ncm = p.ncm && String(p.ncm).replace(/\D/g, ''), est = null;
+  if (!ncm || ncm.length !== 8) {
+    ncm = null;
+    try { const R = await ncmRules(), t = norm(p.n) + ' | ' + norm(p.c || ''); est = R.regras.find(r => r.rx.test(t)); if (est) ncm = est.ncm; } catch (e) {}
+    if (!ncm) return null;
+  }
+  let T; try { T = await (IBPT[uf] ||= fetch(`data/ibpt/${uf}.json`).then(r => r.json())); } catch (e) { return null; }
+  const a = T.t[ncm]; if (!a) return null;
+  return {fed: a[0], es: a[2], mun: a[3], tot: a[0] + a[2] + a[3], ncm, est, T};
+}
+// linha "sem impostos" sob o preço verde (omitida quando o imposto não está disponível)
+function semImp(el, p, price) {
+  taxInfo(p, cur && cur.uf).then(ti => {
+    if (!ti) return;
+    const d = document.createElement('small'); d.className = 'semimp';
+    d.textContent = `sem impostos ${ti.est ? '~' : ''}${BRL(price * (1 - ti.tot / 100))}`;
+    d.title = ti.est ? 'estimativa pela categoria (IBPT)' : 'tributos aproximados pelo NCM do produto (IBPT)';
+    el.appendChild(d);
+  });
+}
 async function taxBox(p, price, uf) {
   const na = '<div class="tt">Tributos</div><div class="tn">Imposto não disponível <small>(sem NCM do produto e sem categoria reconhecida)</small></div>';
   if (!uf) return na;
@@ -490,7 +536,6 @@ async function suggest(q) {
 // ---- contorno do lugar + animação de "brotar" das lojas ----
 const GEO = {};
 const geoFile = f => GEO[f] ||= fetch(`data/geo/${f}.json`).then(r => r.json());
-let outline = null;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 function inRing(pt, ring) { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
   const [xi, yi] = ring[i], [xj, yj] = ring[j];
@@ -532,30 +577,38 @@ function sproutNew(list) {
   SND.burst = 0;
   const c = map.getCenter();
   list.sort((p, q) => ((p.lat - c.lat) ** 2 + (p.lon - c.lng) ** 2) - ((q.lat - c.lat) ** 2 + (q.lon - c.lng) ** 2));
-  list.forEach((m, i) => {
-    const el = m.mk && m.mk.getElement(); if (!el) return;
-    if (reduceMotion || i >= 40) return;          // anima no máx. 40 por vez; o resto aparece direto
-    const delay = Math.min(i * 35, 600);
-    el.style.setProperty('--d', `${delay}ms`); el.classList.add('sprout');
+  if (reduceMotion) return;
+  // "brotar": só os ícones novos ganham um elemento DOM temporário animado (no máx. 40); o ícone WebGL fica oculto até o fim
+  list.slice(0, 40).forEach((it, i) => {
+    const idx = ALL.indexOf(it), delay = Math.min(i * 35, 600);
+    const el = document.createElement('div'); el.className = 'storeicon sprout'; el.style.setProperty('--d', `${delay}ms`);
+    el.innerHTML = it.k === 'loja-fechada' ? CLOSED_SVG : storeSvg(HIST_COLORS[it.k.slice(5)] || HIST_COLORS.none);
+    const mk = new maplibregl.Marker({element: el}).setLngLat([it.lon, it.lat]).addTo(map);
+    map.setFeatureState({source: 'lojas', id: idx}, {anim: true});
+    setTimeout(() => { mk.remove(); if (map.getSource('lojas')) map.setFeatureState({source: 'lojas', id: idx}, {anim: false}); }, delay + 1000);
     if (i < 8) setTimeout(pop, delay + 60);       // som: no máx. 8 por leva (pop() também limita a 1 a cada 40 ms)
   });
 }
+const bboxOf = g => { let w = 180, s = 90, e = -180, n = -90;
+  const walk = a => typeof a[0] === 'number' ? (w = Math.min(w, a[0]), e = Math.max(e, a[0]), s = Math.min(s, a[1]), n = Math.max(n, a[1])) : a.forEach(walk);
+  walk(g.geometry ? g.geometry.coordinates : g.coordinates); return [[w, s], [e, n]]; };
+const DUR = () => reduceMotion ? 0 : 1300;
 async function go(x) {
   audioInit();
-  FORCE = null;
+  setForce(null);
   if (x.t === 'Rede' || x.t === 'Loja') {
     $('gsug').hidden = true; $('gq').value = x.n;
-    if (outline) { map.removeLayer(outline); outline = null; }
+    setSrc('busca', EMPTY);
     if (x.t === 'Rede') {
-      FORCE = x.cid;
-      const pts = STORES.filter(s => s.c === x.cid).map(s => [s.lat, s.lon]);
+      setForce(x.cid);
+      const pts = STORES.filter(s => s.c === x.cid);
       map.once('moveend', () => { collapseGeo(); refreshMarkers(); });
-      if (pts.length === 1) map.flyTo(pts[0], 14, {duration: reduceMotion ? 0 : 1.3});
-      else map.flyToBounds(L.latLngBounds(pts), {padding: [50, 50], maxZoom: 14, duration: reduceMotion ? 0 : 1.3});
+      if (pts.length === 1) map.flyTo({center: [pts[0].lon, pts[0].lat], zoom: 13, duration: DUR()});
+      else map.fitBounds(bboxOf({coordinates: pts.map(s => [s.lon, s.lat])}), {padding: 50, maxZoom: 13, duration: DUR()});
     } else {
       const st = x.st;
       map.once('moveend', () => { collapseGeo(); refreshMarkers(); setTimeout(() => openStore(st), 250); });
-      map.flyTo([st.lat, st.lon], Math.max(map.getZoom(), 16), {duration: reduceMotion ? 0 : 1.3});
+      map.flyTo({center: [st.lon, st.lat], zoom: Math.max(map.getZoom(), 15), duration: DUR()});
     }
     return;
   }
@@ -565,17 +618,11 @@ async function go(x) {
     if (x.t === 'Estado') feat = (await geoFile('estados')).features.find(f => f.properties.uf === x.uf);
     else feat = (await geoFile('mun-' + x.uf)).features.find(f => String(f.properties.id) === String(x.cod));
   } catch (e) {}
-  if (outline) { map.removeLayer(outline); outline = null; }
-  let bounds;
-  if (feat) {
-    outline = L.featureGroup([  // brilho sem filtro CSS (drop-shadow em polígono grande travava o celular)
-      L.geoJSON(feat, {interactive: false, style: {color: '#2f7cf6', weight: 9, opacity: 0.22, fill: false}}),
-      L.geoJSON(feat, {interactive: false, style: {color: '#3b8cff', weight: 2.5, opacity: 0.95, fill: true, fillColor: '#2f7cf6', fillOpacity: 0.06}})]).addTo(map);
-    bounds = outline.getBounds();
-  } else if (x.bb) bounds = L.latLngBounds([x.bb[0], x.bb[1]], [x.bb[2], x.bb[3]]);
-  const done = () => { collapseGeo(); };
-  if (bounds) { map.once('moveend', done); map.flyToBounds(bounds, {padding: [40, 40], duration: reduceMotion ? 0 : 1.3}); }
-  else { map.once('moveend', done); map.flyTo([x.la, x.lo], 12, {duration: reduceMotion ? 0 : 1.3}); }
+  setSrc('busca', feat || EMPTY);
+  const bounds = feat ? bboxOf(feat) : x.bb ? [[x.bb[1], x.bb[0]], [x.bb[3], x.bb[2]]] : null;
+  map.once('moveend', () => collapseGeo());
+  if (bounds) map.fitBounds(bounds, {padding: 40, duration: DUR()});
+  else map.flyTo({center: [x.lo, x.la], zoom: 11, duration: DUR()});
 }
 function drawSug() {
   const b = $('gsug'); b.hidden = !sugs.length;
@@ -592,10 +639,8 @@ $('gq').addEventListener('blur', () => setTimeout(() => { $('gsug').hidden = tru
 function collapseGeo() { $('gsug').hidden = true; $('gq').blur(); $('geo').classList.add('collapsed'); }
 function expandGeo() { $('geo').classList.remove('collapsed'); setTimeout(() => { $('gq').focus(); $('gq').select(); }, 200); }
 $('gopen').onclick = expandGeo;
-map.on('dragstart', () => { if (!$('geo').classList.contains('collapsed')) collapseGeo(); });
 $('geo').onsubmit = async e => {
   e.preventDefault();
   const r = sel >= 0 ? sugs[sel] : (await suggest($('gq').value))[0];
   if (r) go(r); else { $('gsug').hidden = false; $('gsug').innerHTML = '<div>Nenhuma cidade ou estado encontrado.</div>'; }
 };
-init();
