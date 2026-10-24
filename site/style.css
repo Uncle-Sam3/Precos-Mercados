@@ -128,11 +128,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 .pr .semimp{display:block;color:#8a8a8a;font-size:10.5px;font-weight:400;line-height:1.2;white-space:nowrap}
 
-/* layout do preço: verde centralizado na altura do ano; abaixo "sem impostos" e depois "R$/kg · registros" */
-.list>div>.row{min-height:66px}
-.list>div>.row .pr{position:relative;font-size:16px;min-width:120px;top:-14px}
-.list>div>.row .pr .meta,.list>div>.row .pr .semimp{position:absolute;right:0;white-space:nowrap;font-size:10.5px;line-height:13px}
-.list>div>.row .pr .semimp{top:calc(100% + 3px)}
-.list>div>.row .pr .meta{top:calc(100% + 3px)}
-.list>div>.row .pr .semimp+.meta{top:calc(100% + 16px)}
+/* layout do preço: bloco centralizado (verde em cima, depois "sem impostos", depois "R$/kg · registros") */
+.list>div>.row .pr{display:flex;flex-direction:column;align-items:center;text-align:center;font-size:16px;min-width:120px;line-height:1.2}
+.list>div>.row .pr .meta,.list>div>.row .pr .semimp{white-space:nowrap;font-size:10.5px;line-height:13px}
+.list>div>.row .pr .semimp{margin-top:3px}
+.hist .row .pr{display:flex;flex-direction:column;align-items:center;text-align:center}
 .row .pr .meta{color:#9a9a9a}
