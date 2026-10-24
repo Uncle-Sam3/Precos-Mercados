@@ -49,7 +49,7 @@ def mun_cod(city, uf):
     for cod, (n, u) in MUNNAME.items():
         if u == uf and norm(n) == c: return cod
     return None
-def check(lon, lat, city, uf):
+def check(lon, lat, city, uf, tol_m=300):
     """None se ok, senão o motivo."""
     if lon is None or lat is None: return "sem coordenadas"
     dl = dist_land_m(lon, lat)
@@ -59,7 +59,7 @@ def check(lon, lat, city, uf):
     if want and got and got != want:
         # tolera ponto a < 300 m do limite (divisa entre municípios)
         g = dict(MUN)[want]
-        if g.distance(Point(lon, lat)) * 111000 > 300: return f"fora do município ({MUNNAME.get(got, ('?',))[0]} em vez de {city})"
+        if g.distance(Point(lon, lat)) * 111000 > tol_m: return f"fora do município ({MUNNAME.get(got, ('?',))[0]} em vez de {city})"
     return None
 _last = [0]
 def nominatim(street, number, city, uf, cep):
@@ -118,18 +118,22 @@ def locator_url(base):
     return None
 def main():
     only = sys.argv[1:]
-    old = json.load(open(os.path.join(ROOT, "site/data/stores.json")))
+    old = json.load(open(os.path.join(REF, "stores_osm.json")))  # lojas do OpenStreetMap (reserva), geradas por stores_osm.py
     out, rep = [], {"oficial": {}, "corrigidas": [], "ocultas": [], "osm_reserva": 0}
     done_chains = set()
     for c in CHAINS:
         if only and c["id"] not in only:
             out += [s for s in old if s["c"] == c["id"]]; continue
-        pts, base = pickup_points(c); loc = locator_url(base) if pts else None
+        cf = os.path.join(REF, f"pickup_{c['id']}.json")
+        if os.environ.get("USE_CACHE") and os.path.exists(cf): pts, base, loc = json.load(open(cf))
+        else:
+            pts, base = pickup_points(c); loc = locator_url(base) if pts else None
+            json.dump([pts, base, loc], open(cf, "w"), ensure_ascii=False)
         print(f"[{c['id']}] {len(pts)} lojas oficiais (pickup-points); página de lojas: {loc}", flush=True)
         n_ok = 0; offi = []
         for p in pts:
             ufok = p["uf"] if p["uf"] in EST else None
-            why = check(p["lon"], p["lat"], p["ci"], ufok) if ufok else "UF inválida"
+            why = check(p["lon"], p["lat"], p["ci"], ufok, 3000) if ufok else "UF inválida"
             src = "site"
             if why:
                 g = nominatim(p["rua"], p["num"], p["ci"], p["uf"], p["cep"])
@@ -147,9 +151,20 @@ def main():
         for s in old:
             if s["c"] != c["id"] or s.get("src", "osm") != "osm" and "osm" not in s: continue
             if any(abs(o["lat"] - s["lat"]) < 0.0045 and abs(o["lon"] - s["lon"]) < 0.0045 / max(.3, math.cos(math.radians(s["lat"]))) for o in offi): continue
-            why = check(s["lon"], s["lat"], s.get("ci"), s.get("uf"))
-            if why: rep["ocultas"].append(dict(c=c["id"], loja=s.get("n"), end=f"{s.get('a') or ''}, {s.get('ci')}-{s.get('uf')}", motivo=why, fonte="osm")); continue
-            s = dict(s); s["src"] = "osm"; offi.append(s); rep["osm_reserva"] += 1
+            s = dict(s); s["src"] = "osm"
+            why = check(s["lon"], s["lat"], None, None)          # 1) em terra?
+            if why:
+                rep["ocultas"].append(dict(c=c["id"], loja=s.get("n"), end=f"{s.get('a') or ''}, {s.get('ci')}-{s.get('uf')}", motivo=why, fonte="osm")); continue
+            got = mun_of(s["lon"], s["lat"])
+            if got and s.get("ci") and mun_cod(s["ci"], s.get("uf")) not in (None, got):   # 2) município do endereço confere?
+                g = nominatim(*(s["a"].rsplit(" ", 1) if re.search(r"\d+$", s["a"] or "") else (s.get("a"), None)), s["ci"], s["uf"], None) if s.get("a") else None
+                if g and not check(g[0], g[1], s["ci"], s["uf"]):
+                    rep["corrigidas"].append(dict(c=c["id"], loja=s.get("n"), end=f"{s['a']}, {s['ci']}-{s['uf']}", motivo="ponto OSM fora do município do endereço", de=[s["lat"], s["lon"]], para=[g[1], g[0]]))
+                    s["lon"], s["lat"] = round(g[0], 6), round(g[1], 6); s["src"] = "osm+nominatim"
+                else:  # o ponto do OSM fica (está em terra); o município passa a ser o do polígono IBGE onde ele está
+                    rep.setdefault("municipio_ajustado", []).append(dict(c=c["id"], loja=s.get("n"), de=s["ci"], para=MUNNAME[got][0]))
+                    s["ci"], s["uf"] = MUNNAME[got]
+            offi.append(s); rep["osm_reserva"] += 1
         out += offi
     json.dump(out, open(os.path.join(ROOT, "site/data/stores.json"), "w"), ensure_ascii=False, separators=(",", ":"))
     json.dump(rep, open(os.path.join(REF, "lojas_relatorio.json"), "w"), ensure_ascii=False, indent=1)

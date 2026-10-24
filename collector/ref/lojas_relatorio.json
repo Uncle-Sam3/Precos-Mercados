@@ -1,0 +1,337 @@
+{
+ "oficial": {
+  "zaffari": 4,
+  "muffato": 1,
+  "bistek": 13,
+  "giassi": 11,
+  "zonasul": 32,
+  "prezunic": 11,
+  "oba": 80,
+  "covabra": 19,
+  "savegnago": 57,
+  "mambo": 9,
+  "supernosso": 22,
+  "paguemenos": 23,
+  "mercantil": 8,
+  "atacadao": 0,
+  "bretas": 1
+ },
+ "corrigidas": [
+  {
+   "c": "paguemenos",
+   "loja": "Supermercados Pague Menos",
+   "end": "Estrada Municipal Valencio Calegari 3380, Sumaré-SP",
+   "motivo": "ponto OSM fora do município do endereço",
+   "de": [
+    -22.847387,
+    -47.211864
+   ],
+   "para": [
+    -22.8474044,
+    -47.2118693
+   ]
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "end": "Avenida Presidente Getúlio Vargas 101, Alvorada-RS",
+   "motivo": "ponto OSM fora do município do endereço",
+   "de": [
+    -30.012333,
+    -51.09204
+   ],
+   "para": [
+    -30.0125984,
+    -51.091981
+   ]
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "end": "Rua Edgar Sales de Miranda Henriques 400, João Pessoa-PB",
+   "motivo": "ponto OSM fora do município do endereço",
+   "de": [
+    -7.091729,
+    -34.846301
+   ],
+   "para": [
+    -7.091798,
+    -34.8462894
+   ]
+  }
+ ],
+ "ocultas": [],
+ "osm_reserva": 547,
+ "municipio_ajustado": [
+  {
+   "c": "zaffari",
+   "loja": "Zaffari",
+   "de": "Alvorada",
+   "para": "Porto Alegre"
+  },
+  {
+   "c": "zaffari",
+   "loja": "Zaffari",
+   "de": "Taboão da Serra",
+   "para": "São Paulo"
+  },
+  {
+   "c": "zaffari",
+   "loja": "Zaffari",
+   "de": "Guaíba",
+   "para": "Porto Alegre"
+  },
+  {
+   "c": "zaffari",
+   "loja": "Zaffari Strip Center",
+   "de": "Alvorada",
+   "para": "Porto Alegre"
+  },
+  {
+   "c": "bistek",
+   "loja": "Bistek Supermercados",
+   "de": "São José",
+   "para": "Florianópolis"
+  },
+  {
+   "c": "prezunic",
+   "loja": "Prezunic",
+   "de": "Mesquita",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "prezunic",
+   "loja": "Prezunic",
+   "de": "Itaguaí",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "prezunic",
+   "loja": "Prezunic",
+   "de": "Duque de Caxias",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "prezunic",
+   "loja": "Prezunic",
+   "de": "Nilópolis",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "prezunic",
+   "loja": "Prezunic",
+   "de": "Mesquita",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "prezunic",
+   "loja": "Prezunic",
+   "de": "Duque de Caxias",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "prezunic",
+   "loja": "Supermercado Prezunic",
+   "de": "Duque de Caxias",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "supernosso",
+   "loja": "Super Nosso",
+   "de": "Contagem",
+   "para": "Belo Horizonte"
+  },
+  {
+   "c": "supernosso",
+   "loja": "SuperNosso Gourmet",
+   "de": "Belo Horizonte",
+   "para": "Nova Lima"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Guaíba",
+   "para": "Porto Alegre"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Alvorada",
+   "para": "Porto Alegre"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "São José",
+   "para": "Florianópolis"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Alvorada",
+   "para": "Porto Alegre"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Duque de Caxias",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Ferraz de Vasconcelos",
+   "para": "São Paulo"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Ferraz de Vasconcelos",
+   "para": "São Paulo"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Caieiras",
+   "para": "São Paulo"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Diadema",
+   "para": "São Paulo"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Carapicuíba",
+   "para": "Barueri"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Mauá",
+   "para": "Santo André"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "São João de Meriti",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Itaguaí",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Mesquita",
+   "para": "Rio de Janeiro"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Guarulhos",
+   "para": "São Paulo"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Votorantim",
+   "para": "Sorocaba"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Lorena",
+   "para": "Guaratinguetá"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "São Sebastião",
+   "para": "Caraguatatuba"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Itaquaquecetuba",
+   "para": "Guarulhos"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Taboão da Serra",
+   "para": "Cotia"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Jandira",
+   "para": "Barueri"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Novo Gama",
+   "para": "Brasília"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Goiânia",
+   "para": "Aparecida de Goiânia"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Lauro de Freitas",
+   "para": "Salvador"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Itabuna",
+   "para": "Ilhéus"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Cabo de Santo Agostinho",
+   "para": "Jaboatão dos Guararapes"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Eusébio",
+   "para": "Fortaleza"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Parnamirim",
+   "para": "Natal"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Satuba",
+   "para": "Maceió"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "Bayeux",
+   "para": "Santa Rita"
+  },
+  {
+   "c": "atacadao",
+   "loja": "Atacadão",
+   "de": "São Luís",
+   "para": "São José de Ribamar"
+  }
+ ]
+}
