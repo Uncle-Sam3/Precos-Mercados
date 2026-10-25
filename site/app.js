@@ -879,7 +879,6 @@ function cartAdd(p, v, dt, btn) {
 }
 function cartCount() { let n = 0; for (const it of CART.values()) n += it.qty; return n; }
 function cartDraw() {
-  sensCheck();
   const n = cartCount(), b = $('cartn');
   b.hidden = !n; b.textContent = n > 99 ? '99+' : n;
   $('cartbtn').setAttribute('aria-label', n ? `Carrinho (${n} ${n > 1 ? 'itens' : 'item'})` : 'Carrinho');
@@ -933,51 +932,3 @@ function cartOpen() {
 }
 $('cartbtn').onclick = e => { e.stopPropagation(); $('cartpop').hidden ? cartOpen() : ($('cartpop').hidden = true); };
 $('cpclose').onclick = () => $('cartpop').hidden = true;
-
-// ---- "Calma, é só uma sensação 😉": mais da metade do carrinho (em unidades) com preço de 2026 ----
-let sensOver = false;
-function sensCheck() {
-  let tot = 0, novo = 0;
-  for (const it of CART.values()) { tot += it.qty; if (String(it.dt).startsWith('2026')) novo += it.qty; }
-  const over = tot > 0 && novo * 2 > tot;
-  if (over && !sensOver) sensShow();
-  sensOver = over;
-}
-let sensT = 0;
-function sensShow() {
-  const b = $('sensbal'), P = $('panel').getBoundingClientRect(), C = $('cartbtn').getBoundingClientRect();
-  b.style.top = Math.round(C.bottom - P.top + 10) + 'px';
-  b.classList.remove('in'); b.hidden = false;
-  b.style.setProperty('--seta', Math.round(C.left + C.width / 2 - b.getBoundingClientRect().left) + 'px');
-  void b.offsetWidth; b.classList.add('in');
-  clearTimeout(sensT); sensT = setTimeout(() => b.hidden = true, 4200);
-  trombone();
-}
-// trombone triste sintetizado na hora (WebAudio, sem arquivo de áudio): wah, wah, wah, waaah
-function trombone() {
-  if (SND.muted) return;
-  try {
-    const ctx = SND.ctx ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (ctx.state === 'suspended') ctx.resume();
-    const t0 = ctx.currentTime + 0.05, out = ctx.createGain(); out.gain.value = 0.22; out.connect(ctx.destination);
-    const notas = [[196.0, 0, 0.42], [185.0, 0.48, 0.42], [174.6, 0.96, 0.42], [164.8, 1.44, 1.25]];  // Sol, Fá#, Fá, Mi
-    for (const [f, ini, dur] of notas) {
-      const o = ctx.createOscillator(), o2 = ctx.createOscillator(), lp = ctx.createBiquadFilter(), g = ctx.createGain(), t = t0 + ini;
-      o.type = 'sawtooth'; o2.type = 'square'; o2.detune.value = -6;
-      o.frequency.setValueAtTime(f * 1.04, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.08);
-      o2.frequency.setValueAtTime(f * 1.04, t); o2.frequency.exponentialRampToValueAtTime(f, t + 0.08);
-      lp.type = 'lowpass'; lp.Q.value = 6;
-      lp.frequency.setValueAtTime(350, t); lp.frequency.linearRampToValueAtTime(1500, t + 0.12); lp.frequency.linearRampToValueAtTime(600, t + dur);  // "wah"
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 0.05); g.gain.setValueAtTime(1, t + dur - 0.12); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      if (dur > 1) {  // última nota: desce e treme
-        const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 5.5; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(7, t + 0.5);
-        lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency); lfo.start(t); lfo.stop(t + dur);
-        o.frequency.linearRampToValueAtTime(f * 0.94, t + dur); o2.frequency.linearRampToValueAtTime(f * 0.94, t + dur);
-      }
-      const m = ctx.createGain(); m.gain.value = 0.5; o2.connect(m);
-      o.connect(lp); m.connect(lp); lp.connect(g); g.connect(out);
-      o.start(t); o2.start(t); o.stop(t + dur + 0.02); o2.stop(t + dur + 0.02);
-    }
-  } catch (e) {}
-}
-$('sensbal').addEventListener('click', () => { clearTimeout(sensT); $('sensbal').hidden = true; });
