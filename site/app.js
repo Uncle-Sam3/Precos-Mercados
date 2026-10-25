@@ -1,6 +1,6 @@
 const $ = id => document.getElementById(id);
 // Disqus: nome curto do site (vazio = painel mostra "Comentários em breve")
-const DISQUS_SHORTNAME = '';
+const DISQUS_SHORTNAME = 'https-uncle-sam3-github-io-precos-mercados';
 // Preços de Supermercados — frontend estático (GitHub Pages)
 const BRL = v => v.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
 const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
