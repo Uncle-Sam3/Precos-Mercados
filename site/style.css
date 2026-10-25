@@ -157,3 +157,47 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 #titulo{position:fixed;top:0;left:2cm;right:2cm;height:56px;margin:0;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none;
   font-size:26px;font-weight:700;letter-spacing:.5px;color:#eaf1ff;text-shadow:0 0 12px rgba(47,124,246,.55),0 0 26px rgba(40,120,255,.3)}
 @media (max-width:700px){#titulo{height:46px;font-size:21px}#frame{top:46px}}
+/* "?" piscando em vermelho até o 1º clique */
+#help.pisca{animation:piscaAjuda 1.4s ease-in-out infinite}
+@keyframes piscaAjuda{0%,100%{box-shadow:0 0 0 0 rgba(255,59,59,.85),0 0 6px 2px rgba(255,59,59,.6)}50%{box-shadow:0 0 0 7px rgba(255,59,59,0),0 0 16px 6px rgba(255,40,40,.9)}}
+@media (prefers-reduced-motion: reduce){#help.pisca{animation:none;box-shadow:0 0 0 3px #ff3b3b}}
+
+/* ---- responsivo: tudo cabe na tela (celular retrato/paisagem e desktop) ---- */
+html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
+#legend{max-width:calc(100% - 72px);max-height:calc(100% - 70px);overflow:auto}
+#closed{max-width:calc(100% - 16px);max-height:calc(100% - 16px);overflow:auto}
+.cbox{height:min(300px,calc(100dvh - 140px))}
+#zhint{max-width:calc(100% - 24px);white-space:normal;text-align:center}
+@media (max-width:700px){
+  #frame{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));top:calc(46px + env(safe-area-inset-top))}
+  #titulo{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));top:env(safe-area-inset-top)}
+  #panel{left:8px;right:8px;width:auto;top:64px;bottom:8px}
+  #legend{left:56px;right:auto;bottom:12px;max-width:calc(100% - 64px);max-height:calc(100% - 24px)}
+  #closed{flex-direction:column;width:calc(100% - 16px)}
+  #closed .cbox{width:100%}#cphoto{height:min(180px,30dvh)}#cinfo{height:auto;flex:none}
+  #closed #cclose{top:4px;right:4px}
+  .card{flex-wrap:wrap;gap:8px 12px;padding:10px}
+  .card .avg{flex-basis:100%;margin-left:0;text-align:left}
+  .card .ico{width:46px;height:46px}
+  .row{flex-wrap:wrap;gap:6px 10px}
+  .row .nm{flex:1 1 140px}
+  .row .yr{margin-left:auto;min-width:0}
+  .row .pr,.list>div>.row .pr{min-width:0}
+  .hist{margin-left:8px}.hist .row .yr,.hist .row .pr{min-width:0}
+  .hist .tax{margin-left:8px;margin-right:4px}
+  .list>div>.row .pr .meta,.list>div>.row .pr .semimp{white-space:normal}
+  #results{padding:0 6px 10px}
+  #ph{padding:10px 10px 6px}
+}
+@media (max-height:500px){
+  #titulo{height:34px;font-size:18px}
+  #frame{top:calc(34px + env(safe-area-inset-top));bottom:max(6px,env(safe-area-inset-bottom))}
+  #panel{top:8px;bottom:8px;right:max(8px,env(safe-area-inset-right))}
+  #ps{max-height:3.2em;overflow:auto}
+  #legend{bottom:8px;max-height:calc(100% - 16px)}
+  #help{bottom:56px}
+  #zhint{top:auto;bottom:10px}
+}
+#zhint{z-index:590}  /* abaixo do painel da loja e das janelas */
+#legend .lg.tax{display:block}
+#legend{z-index:570}

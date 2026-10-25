@@ -651,6 +651,11 @@ muteBtn.onclick = () => { SND.muted = !SND.muted; localStorage.setItem('mudo', S
 drawMute();
 // legenda (ajuda "?")
 $('help').onclick = e => { e.stopPropagation(); $('legend').hidden = !$('legend').hidden; };
+// "?" pisca em vermelho na 1ª visita até ser clicado (único lembrete guardado: 'picanho_ajuda_vista')
+(() => { let vista = false; try { vista = localStorage.getItem('picanho_ajuda_vista') === '1'; } catch (e) {}
+  if (vista) return;
+  $('help').classList.add('pisca');
+  $('help').addEventListener('click', () => { $('help').classList.remove('pisca'); try { localStorage.setItem('picanho_ajuda_vista', '1'); } catch (e) {} }, {once: true}); })();
 document.addEventListener('click', e => { if (!$('legend').hidden && !$('legend').contains(e.target) && e.target !== $('help')) $('legend').hidden = true; });
 function sproutNew(list) {
   if (!list.length) return;
