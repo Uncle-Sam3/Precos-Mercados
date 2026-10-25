@@ -556,3 +556,10 @@
 20221021104828|https://www.zonasul.com.br/_v/segment/routing/vtex.store@2.x/product/13533/Tomate-em-Conserva-Italiano-Cosi-Come-Datterino-Amarelo-350g-919632/p
 20230128170930|https://www.zonasul.com.br/_v/segment/routing/vtex.store@2.x/product/10716/Biscoito-Italiano-Matilde-Vicenzi-Amarettino-Amendoas-Pacote-100g-474754/p
 20230128172603|https://www.zonasul.com.br/_v/segment/routing/vtex.store@2.x/product/13533/Tomate-em-Conserva-Italiano-Cosi-Come-Datterino-Amarelo-350g-919632/p
+20220129163402|https://www.zonasul.com.br/abobora-japonesa-organica-bio-vida-600-g-449962/p
+20220129163408|https://www.zonasul.com.br/figo-roxo-bandeja-47104/p
+20220129163414|https://www.zonasul.com.br/tomate-cereja-organico-bio-vida-250-g-458635/p
+20220419201420|https://www.zonasul.com.br/https://portal.vtexcommercestable.com.br/super-lombo-de-bacalhau-noruegues-porto-d-oro-gadus-morhua-bandeja-750g-51853/p
+20220419205700|https://www.zonasul.com.br/https://portal.vtexcommercestable.com.br/azeite-extravirgem-italiano-frediani-del-grecco-500ml-125547/p
+20220429012658|https://www.zonasul.com.br/banana-prata-500g-10707/p
+20220429012804|https://www.zonasul.com.br/ovos-brancos-jumbo-mantiqueira-com-10-unidades-437638/p
