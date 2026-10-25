@@ -368,7 +368,7 @@ async function loadChain(id) {
 }
 
 // uma janela de loja por vez: abrir qualquer loja fecha as anteriores; Esc ou clique no mapa vazio fecham
-function closeAll() { if (typeof acClose === 'function' && acState) acClose(); $('panel').classList.add('hidden'); $('cmpanel').classList.add('hidden'); $('closed').classList.add('hidden'); cur = null; }
+function closeAll() { if (typeof acClose === 'function' && acState) acClose(); $('panel').classList.add('hidden'); $('closed').classList.add('hidden'); cur = null; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.activeElement !== $('gq')) closeAll(); });
 function openStore(s) {
   closeAll();
@@ -841,23 +841,24 @@ acBox.addEventListener('pointerdown', e => e.preventDefault());  // não tira o 
 acBox.addEventListener('click', e => { const el = e.target.closest('.aci'); if (el) acPick(+el.dataset.i); });
 
 // ---- comentários (Disqus, carregado só quando o painel abre; uma janela por vez) ----
-let disqusOk = false;
-function abreComentarios() {
-  const aberto = !$('cmpanel').classList.contains('hidden');
-  closeAll(); if (aberto) return;
-  $('cmpanel').classList.remove('hidden');
-  if (!DISQUS_SHORTNAME) { $('disqus_thread').innerHTML = '<div class="msg cmsoon">Comentários em breve</div>'; return; }
-  if (disqusOk) return; disqusOk = true;
-  $('disqus_thread').innerHTML = '<div class="msg">Carregando comentários…</div>';
-  window.disqus_config = function () {
-    this.page.url = 'https://uncle-sam3.github.io/Precos-Mercados/';
-    this.page.identifier = 'picanhometro-geral';
-    this.language = 'pt_BR';
-  };
-  const sc = document.createElement('script');
-  sc.src = `https://${DISQUS_SHORTNAME}.disqus.com/embed.js`; sc.setAttribute('data-timestamp', String(+new Date())); sc.async = true;
-  sc.onerror = () => { disqusOk = false; $('disqus_thread').innerHTML = '<div class="msg">Não foi possível carregar os comentários agora.</div>'; };
-  document.body.appendChild(sc);
-}
-$('cmbtn').onclick = abreComentarios;
-$('cmclose').onclick = () => $('cmpanel').classList.add('hidden');
+
+// Comentários (Disqus) — seção fixa abaixo do mapa; carrega quando a seção aparece na tela
+(function () {
+  const alvo = $('disqus_thread');
+  if (!DISQUS_SHORTNAME) { alvo.innerHTML = '<div class="cmsoon">Comentários em breve</div>'; return; }
+  let ok = false;
+  function carrega() {
+    if (ok) return; ok = true;
+    alvo.innerHTML = '<div class="cmsoon">Carregando comentários…</div>';
+    window.disqus_config = function () { this.page.url = 'https://uncle-sam3.github.io/Precos-Mercados/'; this.page.identifier = 'picanhometro-geral'; this.language = 'pt_BR'; };
+    const sc = document.createElement('script');
+    sc.src = `https://${DISQUS_SHORTNAME}.disqus.com/embed.js`; sc.setAttribute('data-timestamp', String(+new Date())); sc.async = true;
+    sc.onload = () => { const m = alvo.querySelector('.cmsoon'); if (m) m.remove(); };
+    sc.onerror = () => { ok = false; alvo.innerHTML = '<div class="cmsoon">Não foi possível carregar os comentários agora.</div>'; };
+    document.body.appendChild(sc);
+  }
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); carrega(); } }, {rootMargin: '300px 0px'});
+    io.observe($('comentarios'));
+  } else carrega();
+})();
