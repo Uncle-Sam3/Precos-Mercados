@@ -51,9 +51,13 @@
       <div><div id="pt"></div><div id="ps"></div></div>
       <button id="pclose" title="Fechar">✕</button>
     </div>
-    <form id="sform"><input id="q" type="search" placeholder="Pesquisar Produto, Marca ou Categoria" title="Use + para pesquisar vários produtos de uma vez" autocomplete="off"><button type="submit" id="sbtn">Buscar</button></form>
+    <form id="sform"><input id="q" type="search" placeholder="Pesquisar Produto, Marca ou Categoria" title="Use + para pesquisar vários produtos de uma vez" autocomplete="off"><button type="button" id="cartbtn" aria-label="Carrinho" title="Carrinho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 3.5h2.6l2.3 11.2a1.6 1.6 0 0 0 1.6 1.3h8.6a1.6 1.6 0 0 0 1.6-1.2l1.6-6.8H6.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.6" cy="20" r="1.6" fill="#fff"/><circle cx="17.4" cy="20" r="1.6" fill="#fff"/></svg><span id="cartn" hidden>0</span></button><button type="submit" id="sbtn">Buscar</button></form>
     <div id="phint">Dica: Dá pra digitar o tamanho junto, ex.: <b>monster 500ml</b>, <b>café 500g</b>, <b>refrigerante 2l</b> e use o sinal de <b>+</b> para procurar mais de um produto simultaneamente</div>
     <div id="results"></div>
+    <div id="cartpop" hidden role="dialog" aria-label="Carrinho">
+      <div id="cph"><div id="cpt">🛒 Carrinho <small>simulação — não é uma compra</small></div><button id="cpclose" type="button" title="Fechar">✕</button></div>
+      <div id="cpbody"></div>
+    </div>
   </div>
 </div>
 </div>

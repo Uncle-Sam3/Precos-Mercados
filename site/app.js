@@ -368,7 +368,7 @@ async function loadChain(id) {
 }
 
 // uma janela de loja por vez: abrir qualquer loja fecha as anteriores; Esc ou clique no mapa vazio fecham
-function closeAll() { if (typeof acClose === 'function' && acState) acClose(); $('panel').classList.add('hidden'); $('closed').classList.add('hidden'); cur = null; }
+function closeAll() { if (typeof acClose === 'function' && acState) acClose(); $('cartpop').hidden = true; $('panel').classList.add('hidden'); $('closed').classList.add('hidden'); cur = null; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.activeElement !== $('gq')) closeAll(); });
 function openStore(s) {
   closeAll();
@@ -521,23 +521,26 @@ function srcLink(s, ref) {
   return `<a href="${esc(url)}" target="_blank" rel="noopener">${SRC[s] || s}</a>`;
 }
 function img(p) { return p.i ? `<img loading="lazy" src="${esc(p.i.replace('/arquivos/ids/', '/arquivos/ids/').replace(/(ids\/\d+)(-\d+-\d+)?/, '$1-96-96'))}" alt="" onerror="this.outerHTML='<div class=noimg></div>'">` : '<div class="noimg"></div>'; }
+const ADDC = '<button type="button" class="addc" title="Adicionar ao carrinho" aria-label="Adicionar ao carrinho"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.8 3h2.4l2.2 10.6a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.1l1-4.2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.8" cy="19.6" r="1.6" fill="#fff"/><circle cx="16.4" cy="19.6" r="1.6" fill="#fff"/><path d="M15 2.5v7M11.5 6h7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg></button>';
 function rowEl(p) {
   const el = document.createElement('div');
   const [d0, v, src] = p.last;
   const d = (!p.arch && src === 'v') ? (p.x || CH[cur.c].updated || d0) : d0; // data em que esse preço foi visto por último
   el.innerHTML = `<div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))}${p.b ? ' · marca ' + esc(p.b) : ''}${p.arch ? ' · só no arquivo histórico' : ''}${p.ok === false ? ' · indisponível' : ''}</small></div>
-    <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}<small class="meta">${mostraQ(p) ? BRL(perUnit(p, v)) + '/' + p.qu.u + ' · ' : ''}${p.h.length > 1 ? p.h.length + ' registros ▾' : '1 registro ▾'}</small></div></div>`;
+    <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}<small class="meta">${mostraQ(p) ? BRL(perUnit(p, v)) + '/' + p.qu.u + ' · ' : ''}${p.h.length > 1 ? p.h.length + ' registros ▾' : '1 registro ▾'}</small></div>${ADDC}</div>`;
   el.firstChild.onclick = () => {
     const open = el.querySelector('.hist');
     if (open) { open.remove(); return; }
     const h = document.createElement('div'); h.className = 'hist';
     h.innerHTML = p.h.map(([d, v, s, ref]) => `<div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))} · <span class="src">${srcLink(s, ref)}</span></small></div>
-      <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}${mostraQ(p) ? `<small class="meta">${BRL(perUnit(p, v))}/${p.qu.u}</small>` : ''}</div></div>`).join('');
+      <div class="yr">${d.slice(0, 4)}<small>${fmtDate(d)}</small></div><div class="pr">${BRL(v)}${mostraQ(p) ? `<small class="meta">${BRL(perUnit(p, v))}/${p.qu.u}</small>` : ''}</div>${ADDC}</div>`).join('');
     const tx = document.createElement('div'); tx.className = 'tax'; tx.textContent = 'Tributos aproximados…';
     h.appendChild(tx); el.appendChild(h);
     taxBox(p, v, cur && cur.uf).then(html => tx.innerHTML = html);
     h.querySelectorAll('.pr').forEach((pr, i) => semImp(pr, p, p.h[i][1]));
+    h.querySelectorAll('.addc').forEach((b, i) => b.onclick = e => { e.stopPropagation(); cartAdd(p, p.h[i][1], p.h[i][0], b); });
   };
+  el.querySelector('.addc').onclick = e => { e.stopPropagation(); cartAdd(p, v, d, e.currentTarget); };
   semImp(el.querySelector('.pr'), p, v);
   return el;
 }
@@ -862,3 +865,71 @@ acBox.addEventListener('click', e => { const el = e.target.closest('.aci'); if (
     io.observe($('comentarios'));
   } else carrega();
 })();
+
+// ---- carrinho (simulação; só na memória desta página — não é salvo) ----
+const CART = new Map();  // chave loja|produto → {p, v, s, rede, qty, ti}
+const lojaKey = s => `${s.c}|${s.n}|${s.a || s.ci || ''}`;
+function cartAdd(p, v, dt, btn) {
+  if (!cur) return;
+  const s = cur, k = lojaKey(s) + '|' + p.id + '|' + dt + '|' + v;
+  const it = CART.get(k);
+  if (it) it.qty++;
+  else { const n = {p, v, dt, s, rede: CH[s.c].name, qty: 1, ti: undefined}; CART.set(k, n); taxInfo(p, s.uf).then(ti => { n.ti = ti; cartDraw(); }); }
+  if (btn) { btn.classList.add('ok'); setTimeout(() => btn.classList.remove('ok'), 700); }
+  cartDraw();
+}
+function cartCount() { let n = 0; for (const it of CART.values()) n += it.qty; return n; }
+function cartDraw() {
+  const n = cartCount(), b = $('cartn');
+  b.hidden = !n; b.textContent = n > 99 ? '99+' : n;
+  $('cartbtn').setAttribute('aria-label', n ? `Carrinho (${n} ${n > 1 ? 'itens' : 'item'})` : 'Carrinho');
+  if ($('cartpop').hidden) return;
+  const B = $('cpbody');
+  if (!CART.size) { B.innerHTML = '<div class="cpvazio">Carrinho vazio.<br><small>Use o botão azul do carrinho ao lado do preço, na busca, para adicionar.</small></div>'; return; }
+  const grupos = new Map();
+  for (const [k, it] of CART) { const g = lojaKey(it.s); if (!grupos.has(g)) grupos.set(g, []); grupos.get(g).push([k, it]); }
+  // soma "sem impostos": só itens com alíquota conhecida; avisa quantos ficaram de fora
+  const soma = arr => { let t = 0, si = 0, semDado = 0, est = false, pend = false;
+    for (const [, it] of arr) { const x = it.v * it.qty; t += x;
+      if (it.ti === undefined) pend = true; else if (!it.ti) semDado++; else { si += x * (1 - it.ti.tot / 100); if (it.ti.est) est = true; } }
+    return {t, si, semDado, est, pend}; };
+  const totTxt = (r, rot) => `<div class="cptot"><span>${rot}</span><b>${BRL(r.t)}</b></div>` +
+    (r.pend ? '<div class="cpsi">sem impostos: calculando…</div>' : r.si || !r.semDado ? `<div class="cpsi">sem impostos ~${BRL(r.si)}${r.semDado ? ` <small>(${r.semDado} ${r.semDado > 1 ? 'itens' : 'item'} sem dado de imposto ficou de fora)</small>` : ''}</div>` : '<div class="cpsi">sem impostos: imposto não disponível</div>');
+  let html = '';
+  for (const [, arr] of grupos) {
+    const s = arr[0][1].s, r = soma(arr);
+    html += `<div class="cpgrp"><div class="cploja">${esc(arr[0][1].rede)} <small>${esc(s.n)}${s.ci ? ' · ' + esc(s.ci) + (s.uf ? '/' + s.uf : '') : ''}</small></div>`;
+    for (const [k, it] of arr) {
+      const p = it.p, v = it.v;
+      const si = it.ti ? `<small class="semimp" title="${it.ti.est ? 'estimativa pela categoria (IBPT)' : 'tributos aproximados pelo NCM do produto (IBPT)'}">sem impostos ${it.ti.est ? '~' : ''}${BRL(v * (1 - it.ti.tot / 100))}</small>` : '';
+      html += `<div class="cpit" data-k="${esc(k)}"><div class="row">${img(p)}<div class="nm">${esc(p.n)}<small>${esc(sizeOf(p.n))}${p.b ? ' · marca ' + esc(p.b) : ''} · ${esc(it.rede)} · preço de ${fmtDate(it.dt)}${p.arch ? ' · só no arquivo histórico' : ''}${p.ok === false ? ' · indisponível' : ''}</small></div>
+        <div class="pr">${BRL(v)}${si}${mostraQ(p) ? `<small class="meta">${BRL(perUnit(p, v))}/${p.qu.u}</small>` : ''}</div></div>
+        <div class="cpq"><button type="button" class="qm" aria-label="Diminuir">−</button><span>${it.qty}</span><button type="button" class="qp" aria-label="Aumentar">+</button>
+        <span class="cpsub">${it.qty > 1 ? `${it.qty} × ${BRL(v)} = ` : ''}<b>${BRL(v * it.qty)}</b></span><button type="button" class="qx" title="Remover" aria-label="Remover">Remover</button></div></div>`;
+    }
+    html += grupos.size > 1 ? `<div class="cpstot">${totTxt(r, 'Subtotal ' + esc(arr[0][1].rede))}</div></div>` : '</div>';
+  }
+  const R = soma([...CART]);
+  html += `<div class="cpfim">${totTxt(R, `Total (${n} ${n > 1 ? 'itens' : 'item'}) com impostos`)}
+    <div class="cpnota">Preços do último registro de cada site mostrado na busca; impostos aproximados (IBPT).</div>
+    <button type="button" id="cplimpa">Esvaziar carrinho</button></div>`;
+  B.innerHTML = html;
+}
+$('cpbody').addEventListener('click', e => {
+  if (e.target.id === 'cplimpa') { CART.clear(); return cartDraw(); }
+  const box = e.target.closest('.cpit'); if (!box) return;
+  const it = CART.get(box.dataset.k); if (!it) return;
+  if (e.target.classList.contains('qp')) it.qty++;
+  else if (e.target.classList.contains('qm')) { if (--it.qty < 1) CART.delete(box.dataset.k); }
+  else if (e.target.classList.contains('qx')) CART.delete(box.dataset.k);
+  else return;
+  cartDraw();
+});
+function cartOpen() {
+  const P = $('panel').getBoundingClientRect(), F = $('sform').getBoundingClientRect();
+  $('cartpop').style.top = Math.round(F.bottom - P.top + 2) + 'px';
+  if (typeof acClose === 'function' && acState) acClose();
+  $('cartpop').hidden = false; cartDraw();
+}
+$('cartbtn').onclick = e => { e.stopPropagation(); $('cartpop').hidden ? cartOpen() : ($('cartpop').hidden = true); };
+$('cpclose').onclick = () => $('cartpop').hidden = true;
