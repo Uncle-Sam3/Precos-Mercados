@@ -1,6 +1,6 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#121212;color:#e8e8e8;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-#frame{position:fixed;left:2cm;right:2cm;top:56px;bottom:1cm;border:1px solid #2e2e2e;border-radius:14px;overflow:hidden;
+#frame{position:fixed;left:2cm;right:2cm;top:56px;bottom:52px;border:1px solid #2e2e2e;border-radius:14px;overflow:hidden;
   box-shadow:0 0 60px rgba(40,120,255,.35),0 10px 40px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.03) inset;background:#1a1a1a}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(40,120,255,.12) 0%,rgba(18,18,18,0) 70%);pointer-events:none}
 #map{position:absolute;inset:0}
@@ -169,7 +169,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
 .cbox{height:min(300px,calc(100dvh - 140px))}
 #zhint{max-width:calc(100% - 24px);white-space:normal;text-align:center}
 @media (max-width:700px){
-  #frame{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));top:calc(46px + env(safe-area-inset-top))}
+  #frame{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));bottom:calc(46px + env(safe-area-inset-bottom));top:calc(46px + env(safe-area-inset-top))}
   #titulo{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));top:env(safe-area-inset-top)}
   #panel{left:8px;right:8px;width:auto;top:64px;bottom:8px}
   #legend{left:56px;right:auto;bottom:12px;max-width:calc(100% - 64px);max-height:calc(100% - 24px)}
@@ -191,7 +191,7 @@ html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
 }
 @media (max-height:500px){
   #titulo{height:34px;font-size:18px}
-  #frame{top:calc(34px + env(safe-area-inset-top));bottom:max(6px,env(safe-area-inset-bottom))}
+  #frame{top:calc(34px + env(safe-area-inset-top));bottom:calc(38px + env(safe-area-inset-bottom))}
   #panel{top:8px;bottom:8px;right:max(8px,env(safe-area-inset-right))}
   #ps{max-height:3.2em;overflow:auto}
   #legend{bottom:8px;max-height:calc(100% - 16px)}
@@ -201,3 +201,17 @@ html,body{height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
 #zhint{z-index:590}  /* abaixo do painel da loja e das janelas */
 #legend .lg.tax{display:block}
 #legend{z-index:570}
+/* comentários: botão na faixa de baixo + painel (mesmo tamanho do painel da loja) */
+#cmbtn{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(9px + env(safe-area-inset-bottom));z-index:5;height:34px;padding:0 18px;border:none;border-radius:999px;
+  background:#2f7cf6;color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.5);white-space:nowrap}
+#cmbtn:hover{background:#4a8ff8}
+#cmpanel{position:absolute;top:70px;right:10px;bottom:76px;width:min(460px,calc(100% - 20px));z-index:600;background:#181818;border:1px solid #333;
+  border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.6);display:flex;flex-direction:column;color:#e8e8e8}
+#cmpanel.hidden{display:none}
+#cmh{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 8px}
+#cmt{font-weight:700;font-size:16px}
+#cmclose{background:#2f7cf6;border:none;color:#fff;border-radius:50%;width:28px;height:28px;font-size:18px;cursor:pointer}
+#cmbody{overflow:auto;flex:1;padding:0 12px 12px;min-height:0}
+#cmbody .cmsoon{text-align:center;padding:40px 10px;font-size:15px;color:#aab3c2}
+@media (max-width:700px){#cmpanel{left:8px;right:8px;width:auto;top:64px;bottom:8px}#cmbtn{bottom:calc(6px + env(safe-area-inset-bottom));height:32px;font-size:13.5px}}
+@media (max-height:500px){#cmpanel{top:8px;bottom:8px}#cmbtn{height:28px;bottom:calc(5px + env(safe-area-inset-bottom));font-size:13px}}
