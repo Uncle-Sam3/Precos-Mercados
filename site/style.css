@@ -1,6 +1,6 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#121212;color:#e8e8e8;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-#frame{position:fixed;left:2cm;right:2cm;top:1cm;bottom:1cm;border:1px solid #2e2e2e;border-radius:14px;overflow:hidden;
+#frame{position:fixed;left:2cm;right:2cm;top:56px;bottom:1cm;border:1px solid #2e2e2e;border-radius:14px;overflow:hidden;
   box-shadow:0 0 60px rgba(40,120,255,.35),0 10px 40px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.03) inset;background:#1a1a1a}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(40,120,255,.12) 0%,rgba(18,18,18,0) 70%);pointer-events:none}
 #map{position:absolute;inset:0}
@@ -153,3 +153,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 @media (max-width:480px){#acbox .aci{padding:9px 10px;font-size:13.5px}}
 #acbox .aci .act i{font-style:normal;color:#999}#acbox .aci.on .act i{color:#dce8ff}
 .card .t .tam{text-transform:none;color:#9ec2ff;font-weight:600}
+/* título no alto da página, acima da janela do mapa */
+#titulo{position:fixed;top:0;left:2cm;right:2cm;height:56px;margin:0;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none;
+  font-size:26px;font-weight:700;letter-spacing:.5px;color:#eaf1ff;text-shadow:0 0 12px rgba(47,124,246,.55),0 0 26px rgba(40,120,255,.3)}
+@media (max-width:700px){#titulo{height:46px;font-size:21px}#frame{top:46px}}
