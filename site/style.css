@@ -254,3 +254,17 @@ html,body{height:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior-x:no
 #sform button{height:38px;box-sizing:border-box}
 #sform #cartbtn{width:38px;min-width:38px;height:38px;aspect-ratio:auto}
 #phint{margin-top:-2px}
+/* janela de loja fechada / recuperação judicial: botão ✕ dentro do canto (não é mais cortado) e sem rolagem horizontal */
+#closed{overflow-x:hidden;overflow-y:auto}
+#cclose{top:8px;right:8px;z-index:2;width:28px;height:28px;padding:0;font-size:15px;line-height:28px;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+#cinfo h3{padding-right:30px}
+#cinfo{overflow-x:hidden;overflow-y:auto}
+/* barras de rolagem no estilo do celular (overlay): polegar fino, cinza semitransparente, arredondado, sem trilho e sem setas */
+::-webkit-scrollbar{width:7px;height:7px;background:transparent}
+::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(170,170,170,.5);border-radius:999px;border:1.5px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:rgba(190,190,190,.7);background-clip:padding-box}
+::-webkit-scrollbar-button{display:none;width:0;height:0}
+@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:rgba(170,170,170,.5) transparent}}
+/* sem rolagem horizontal nos painéis/listas (só vertical, com a barra fina acima) */
+#results,#cpbody,#legend,#cinfo,#closed{overflow-x:hidden}
