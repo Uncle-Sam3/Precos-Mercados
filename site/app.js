@@ -932,3 +932,55 @@ function cartOpen() {
 }
 $('cartbtn').onclick = e => { e.stopPropagation(); $('cartpop').hidden ? cartOpen() : ($('cartpop').hidden = true); };
 $('cpclose').onclick = () => $('cartpop').hidden = true;
+
+// ---- Street View (sem chave de API): arrastar o bonequinho até o mapa, ou tocar nele e depois no mapa → abre o Google Maps em nova aba ----
+(function () {
+  const btn = $('svbtn'), hint = $('svhint'), mapEl = $('map');
+  let pick = false, drag = null, ghost = null;
+  const abre = (lng, lat) => window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat.toFixed(6)},${lng.toFixed(6)}`, '_blank', 'noopener');
+  const noMapa = (x, y) => { const r = mapEl.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom && document.elementFromPoint(x, y)?.closest('#map') ? r : null; };
+  const lngLat = (x, y, r) => map.unproject([x - r.left, y - r.top]);
+  const fechaOutros = () => { closeAll(); $('legend').hidden = true; $('bmenu').hidden = true; $('lmenu').hidden = true; };
+  function modo(on) {
+    pick = on; btn.classList.toggle('on', on); hint.hidden = !on; document.body.classList.toggle('svpick', on);
+    if (on) fechaOutros();
+  }
+  // modo "escolher ponto": o clique no mapa é interceptado antes do MapLibre (não abre lojas)
+  mapEl.addEventListener('click', e => {
+    if (!pick || !map) return;
+    e.stopPropagation(); e.preventDefault();
+    const r = mapEl.getBoundingClientRect(), p = lngLat(e.clientX, e.clientY, r);
+    modo(false); abre(p.lng, p.lat);
+  }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pick) modo(false); });
+  // arrastar
+  btn.addEventListener('pointerdown', e => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    drag = {id: e.pointerId, x0: e.clientX, y0: e.clientY, moved: false};
+    try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+  btn.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) return;
+    if (!drag.moved) {
+      drag.moved = true; if (pick) modo(false); fechaOutros();
+      ghost = document.createElement('div'); ghost.id = 'svghost'; ghost.innerHTML = btn.innerHTML + '<i></i>'; document.body.appendChild(ghost);
+      document.body.classList.add('svdrag');
+    }
+    ghost.style.transform = `translate(${e.clientX}px,${e.clientY}px)`;
+    ghost.classList.toggle('fora', !noMapa(e.clientX, e.clientY));
+  });
+  const fim = (e, cancel) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const d = drag; drag = null;
+    if (ghost) { ghost.remove(); ghost = null; } document.body.classList.remove('svdrag');
+    if (cancel) return;
+    if (!d.moved) { modo(!pick); return; }  // toque simples: liga/desliga o modo
+    const r = noMapa(e.clientX, e.clientY);
+    if (r && map) { const p = lngLat(e.clientX, e.clientY, r); abre(p.lng, p.lat); }
+  };
+  btn.addEventListener('pointerup', e => fim(e, false));
+  btn.addEventListener('pointercancel', e => fim(e, true));
+  btn.addEventListener('click', e => e.preventDefault());
+})();

@@ -268,3 +268,19 @@ html,body{height:auto;overflow-x:hidden;overflow-y:auto;overscroll-behavior-x:no
 @supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:rgba(170,170,170,.5) transparent}}
 /* sem rolagem horizontal nos painéis/listas (só vertical, com a barra fina acima) */
 #results,#cpbody,#legend,#cinfo,#closed{overflow-x:hidden}
+/* Street View: bonequinho laranja (desenho próprio) */
+#svbtn{width:42px;height:42px;border-radius:50%;border:none;background:radial-gradient(circle at 35% 30%,#ffb347,#f08a1c 70%);cursor:grab;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(0,0,0,.5);padding:0;touch-action:none;-webkit-user-select:none;user-select:none}
+#svbtn:hover{filter:brightness(1.08)}
+#svbtn.on{box-shadow:0 0 0 3px #fff,0 0 14px 4px rgba(240,138,28,.8)}
+#svbtn svg{pointer-events:none}
+#svhint{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:595;background:rgba(18,18,18,.9);color:#ffd9a8;border:1px solid rgba(240,138,28,.7);border-radius:999px;padding:7px 16px;font-size:13px;max-width:calc(100% - 24px);text-align:center;pointer-events:none}
+#svhint small{color:#b9a58a;font-size:11px}
+#svhint[hidden]{display:none}
+body.svpick #map .maplibregl-canvas{cursor:crosshair}
+body.svdrag,body.svdrag *{cursor:grabbing!important}
+#svghost{position:fixed;left:0;top:0;z-index:2000;pointer-events:none}
+#svghost svg{position:absolute;left:-17px;top:-40px;width:34px;height:34px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.6))}
+#svghost i{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;border:2px solid #f08a1c;background:rgba(240,138,28,.25);box-shadow:0 0 0 2px rgba(255,255,255,.7)}
+#svghost.fora{opacity:.5}
+@media (max-width:700px){#svhint{top:62px;font-size:12px}}
+body.svpick #zhint{display:none!important}
