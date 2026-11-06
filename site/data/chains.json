@@ -3,37 +3,37 @@
   "id": "zaffari",
   "name": "Zaffari",
   "site": "https://www.zaffari.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
-  "old_share": 0.4825,
+  "old_share": 0.4816,
   "old_years": [
    "2023",
    "2024",
    "2025"
   ],
-  "n": 15639,
-  "n_arch": 2197,
+  "n": 15669,
+  "n_arch": 2209,
   "oldest": "2023-08-29",
-  "n_prices": 48530,
-  "n_archive": 28577,
+  "n_prices": 49047,
+  "n_archive": 28608,
   "oldest_archive": "2023-08-29",
   "by_source": {
-   "c": 17616,
+   "c": 17637,
    "a": 299,
-   "w": 10662,
-   "v": 19953
+   "w": 10672,
+   "v": 20439
   },
   "has_old": true,
-  "size": 10940938,
+  "size": 10971597,
   "status": "ok"
  },
  {
   "id": "muffato",
   "name": "Super Muffato",
   "site": "https://www.supermuffato.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "full",
-  "old_share": 0.7581,
+  "old_share": 0.752,
   "old_years": [
    "2013",
    "2014",
@@ -49,75 +49,75 @@
    "2024",
    "2025"
   ],
-  "n": 7587,
-  "n_arch": 29259,
+  "n": 7653,
+  "n_arch": 29280,
   "oldest": "2013-04-30",
-  "n_prices": 102071,
-  "n_archive": 91104,
+  "n_prices": 102635,
+  "n_archive": 91154,
   "oldest_archive": "2013-04-30",
   "by_source": {
-   "c": 69950,
-   "w": 21154,
-   "v": 10967
+   "c": 69979,
+   "w": 21175,
+   "v": 11481
   },
   "has_old": true,
-  "size": 27337357,
+  "size": 27384388,
   "status": "ok"
  },
  {
   "id": "bistek",
   "name": "Bistek Supermercados",
   "site": "https://www.bistek.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
-  "old_share": 0.4116,
+  "old_share": 0.411,
   "old_years": [
    "2024",
    "2025"
   ],
-  "n": 12463,
-  "n_arch": 2184,
+  "n": 12477,
+  "n_arch": 2201,
   "oldest": "2024-05-27",
-  "n_prices": 33948,
-  "n_archive": 25114,
+  "n_prices": 34195,
+  "n_archive": 25199,
   "oldest_archive": "2024-05-27",
   "by_source": {
-   "w": 17196,
-   "v": 8834,
+   "w": 17265,
+   "v": 8996,
    "a": 145,
-   "c": 7773
+   "c": 7789
   },
   "has_old": true,
-  "size": 8110229,
+  "size": 8132705,
   "status": "ok"
  },
  {
   "id": "giassi",
   "name": "Giassi Supermercados",
   "site": "https://www.giassi.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
-  "old_share": 0.1044,
+  "old_share": 0.1081,
   "old_years": [
    "2022",
    "2023",
    "2024",
    "2025"
   ],
-  "n": 11290,
-  "n_arch": 304,
+  "n": 11293,
+  "n_arch": 310,
   "oldest": "2022-08-12",
-  "n_prices": 19151,
-  "n_archive": 1820,
+  "n_prices": 20310,
+  "n_archive": 1973,
   "oldest_archive": "2022-08-12",
   "by_source": {
-   "w": 944,
+   "w": 1019,
    "a": 35,
-   "v": 17331,
-   "c": 841
+   "v": 18337,
+   "c": 919
   },
   "has_old": true,
-  "size": 4668594,
+  "size": 4729797,
   "status": "ok"
  },
  {
@@ -135,26 +135,26 @@
    "2025"
   ],
   "n": 23964,
-  "n_arch": 632,
+  "n_arch": 636,
   "oldest": "2021-01-13",
-  "n_prices": 24292,
-  "n_archive": 12313,
+  "n_prices": 24318,
+  "n_archive": 12339,
   "oldest_archive": "2021-01-13",
   "by_source": {
    "a": 457,
    "w": 3334,
-   "c": 8522,
+   "c": 8548,
    "v": 11979
   },
   "has_old": true,
-  "size": 9747726,
+  "size": 9754943,
   "status": "ok"
  },
  {
   "id": "prezunic",
   "name": "Prezunic",
   "site": "https://www.prezunic.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
   "old_share": 0.1453,
   "old_years": [
@@ -163,81 +163,81 @@
    "2025"
   ],
   "n": 29898,
-  "n_arch": 514,
+  "n_arch": 554,
   "oldest": "2023-03-14",
-  "n_prices": 16695,
-  "n_archive": 6346,
+  "n_prices": 16980,
+  "n_archive": 6387,
   "oldest_archive": "2023-03-14",
   "by_source": {
-   "v": 10349,
+   "v": 10593,
    "a": 476,
-   "c": 4885,
+   "c": 4926,
    "w": 985
   },
   "has_old": true,
-  "size": 10170436,
+  "size": 10194912,
   "status": "ok"
  },
  {
   "id": "oba",
   "name": "Oba Hortifruti",
   "site": "https://www.obahortifruti.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
-  "old_share": 0.1217,
+  "old_share": 0.1215,
   "old_years": [
    "2023",
    "2024",
    "2025"
   ],
-  "n": 5863,
-  "n_arch": 445,
+  "n": 5894,
+  "n_arch": 453,
   "oldest": "2023-01-19",
-  "n_prices": 7442,
-  "n_archive": 1474,
+  "n_prices": 7551,
+  "n_archive": 1484,
   "oldest_archive": "2023-01-19",
   "by_source": {
-   "w": 1212,
-   "v": 5968,
+   "w": 1222,
+   "v": 6067,
    "c": 262
   },
   "has_old": true,
-  "size": 2257466,
+  "size": 2271490,
   "status": "ok"
  },
  {
   "id": "covabra",
   "name": "Covabra Supermercados",
   "site": "https://www.covabra.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
   "old_share": 0.1297,
   "old_years": [
    "2024",
    "2025"
   ],
-  "n": 31419,
+  "n": 31424,
   "n_arch": 34,
   "oldest": "2024-04-07",
-  "n_prices": 24459,
+  "n_prices": 24619,
   "n_archive": 9678,
   "oldest_archive": "2024-04-07",
   "by_source": {
    "w": 6263,
-   "v": 14781,
+   "v": 14941,
    "c": 3415
   },
   "has_old": true,
-  "size": 9697237,
+  "size": 9703163,
   "status": "ok"
  },
  {
   "id": "savegnago",
   "name": "Savegnago",
   "site": "https://www.savegnago.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
-  "old_share": 0.3216,
+  "old_share": 0.3257,
   "old_years": [
    "2016",
    "2017",
@@ -249,27 +249,27 @@
    "2024",
    "2025"
   ],
-  "n": 16913,
+  "n": 16951,
   "n_arch": 9130,
   "oldest": "2016-11-16",
-  "n_prices": 46423,
+  "n_prices": 46522,
   "n_archive": 32353,
   "oldest_archive": "2016-11-16",
   "by_source": {
    "w": 9160,
    "c": 23146,
-   "v": 14070,
+   "v": 14169,
    "a": 47
   },
   "has_old": true,
-  "size": 13101358,
+  "size": 13119646,
   "status": "ok"
  },
  {
   "id": "mambo",
   "name": "Mambo Supermercados",
   "site": "https://www.mambo.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
   "old_share": 0.2144,
   "old_years": [
@@ -283,27 +283,27 @@
    "2024",
    "2025"
   ],
-  "n": 18550,
+  "n": 18553,
   "n_arch": 7560,
   "oldest": "2015-02-16",
-  "n_prices": 41772,
+  "n_prices": 41861,
   "n_archive": 25377,
   "oldest_archive": "2015-02-16",
   "by_source": {
    "w": 14732,
-   "v": 16395,
+   "v": 16484,
    "c": 10555,
    "a": 90
   },
   "has_old": true,
-  "size": 10934275,
+  "size": 10937026,
   "status": "ok"
  },
  {
   "id": "supernosso",
   "name": "Super Nosso",
   "site": "https://www.supernosso.com",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
   "old_share": 0.199,
   "old_years": [
@@ -315,47 +315,47 @@
    "2024",
    "2025"
   ],
-  "n": 35957,
+  "n": 35959,
   "n_arch": 2001,
   "oldest": "2019-09-17",
-  "n_prices": 56425,
+  "n_prices": 56567,
   "n_archive": 18097,
   "oldest_archive": "2019-09-17",
   "by_source": {
-   "v": 38328,
+   "v": 38470,
    "c": 11300,
    "w": 6797
   },
   "has_old": true,
-  "size": 15312492,
+  "size": 15317128,
   "status": "ok"
  },
  {
   "id": "paguemenos",
   "name": "Super Pague Menos",
   "site": "https://www.superpaguemenos.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "none",
   "old_share": 0.0,
   "old_years": [],
-  "n": 17068,
+  "n": 17078,
   "n_arch": 0,
   "oldest": "2026-10-23",
-  "n_prices": 19324,
+  "n_prices": 19670,
   "n_archive": 0,
   "oldest_archive": null,
   "by_source": {
-   "v": 19324
+   "v": 19670
   },
   "has_old": false,
-  "size": 5279790,
+  "size": 5292691,
   "status": "ok"
  },
  {
   "id": "mercantil",
   "name": "Mercantil Rodrigues / Atacado",
   "site": "https://www.mercantilatacado.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
   "old_share": 0.1837,
   "old_years": [
@@ -366,47 +366,47 @@
   "n": 12366,
   "n_arch": 14,
   "oldest": "2023-07-13",
-  "n_prices": 8181,
+  "n_prices": 8200,
   "n_archive": 4398,
   "oldest_archive": "2023-07-13",
   "by_source": {
-   "v": 3783,
+   "v": 3802,
    "c": 2223,
    "w": 2175
   },
   "has_old": true,
-  "size": 4408105,
+  "size": 4408691,
   "status": "ok"
  },
  {
   "id": "atacadao",
   "name": "Atacadão",
   "site": "https://www.atacadao.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
   "old_share": 0.0001,
   "old_years": [
    "2025"
   ],
-  "n": 56927,
+  "n": 56928,
   "n_arch": 0,
   "oldest": "2025-08-12",
-  "n_prices": 9431,
+  "n_prices": 9847,
   "n_archive": 4,
   "oldest_archive": "2025-08-12",
   "by_source": {
-   "v": 9427,
+   "v": 9843,
    "w": 4
   },
   "has_old": true,
-  "size": 14321960,
+  "size": 14334023,
   "status": "ok"
  },
  {
   "id": "bretas",
   "name": "Bretas",
   "site": "https://www.bretas.com.br",
-  "updated": "2026-11-05",
+  "updated": "2026-11-06",
   "hist_level": "partial",
   "old_share": 0.2184,
   "old_years": [
