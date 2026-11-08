@@ -5,26 +5,26 @@
   "site": "https://www.zaffari.com.br",
   "updated": "2026-11-08",
   "hist_level": "partial",
-  "old_share": 0.4807,
+  "old_share": 0.4847,
   "old_years": [
    "2023",
    "2024",
    "2025"
   ],
   "n": 15698,
-  "n_arch": 2216,
+  "n_arch": 2532,
   "oldest": "2023-08-29",
-  "n_prices": 49211,
-  "n_archive": 28639,
+  "n_prices": 51598,
+  "n_archive": 31026,
   "oldest_archive": "2023-08-29",
   "by_source": {
-   "c": 17667,
-   "a": 299,
-   "w": 10673,
+   "c": 17921,
+   "a": 294,
+   "w": 12811,
    "v": 20572
   },
   "has_old": true,
-  "size": 10993097,
+  "size": 11381354,
   "status": "ok"
  },
  {
@@ -33,7 +33,7 @@
   "site": "https://www.supermuffato.com.br",
   "updated": "2026-11-08",
   "hist_level": "full",
-  "old_share": 0.7418,
+  "old_share": 0.7641,
   "old_years": [
    "2013",
    "2014",
@@ -50,18 +50,18 @@
    "2025"
   ],
   "n": 7708,
-  "n_arch": 29304,
+  "n_arch": 34778,
   "oldest": "2013-04-30",
-  "n_prices": 103072,
-  "n_archive": 91305,
+  "n_prices": 128440,
+  "n_archive": 116673,
   "oldest_archive": "2013-04-30",
   "by_source": {
-   "c": 70075,
-   "w": 21230,
+   "c": 89367,
+   "w": 27306,
    "v": 11767
   },
   "has_old": true,
-  "size": 27445443,
+  "size": 33852482,
   "status": "ok"
  },
  {
@@ -70,25 +70,25 @@
   "site": "https://www.bistek.com.br",
   "updated": "2026-11-08",
   "hist_level": "partial",
-  "old_share": 0.4107,
+  "old_share": 0.4109,
   "old_years": [
    "2024",
    "2025"
   ],
   "n": 12494,
-  "n_arch": 2222,
+  "n_arch": 2809,
   "oldest": "2024-05-27",
-  "n_prices": 34391,
-  "n_archive": 25311,
+  "n_prices": 35024,
+  "n_archive": 25944,
   "oldest_archive": "2024-05-27",
   "by_source": {
-   "w": 17353,
+   "w": 18034,
    "v": 9080,
-   "a": 145,
-   "c": 7813
+   "a": 141,
+   "c": 7769
   },
   "has_old": true,
-  "size": 8159948,
+  "size": 8320041,
   "status": "ok"
  },
  {
@@ -107,17 +107,17 @@
   "n": 11294,
   "n_arch": 319,
   "oldest": "2022-08-12",
-  "n_prices": 21741,
-  "n_archive": 2197,
+  "n_prices": 21648,
+  "n_archive": 2104,
   "oldest_archive": "2022-08-12",
   "by_source": {
-   "w": 1170,
-   "a": 35,
-   "c": 992,
+   "w": 1085,
+   "a": 33,
+   "c": 986,
    "v": 19544
   },
   "has_old": true,
-  "size": 4808634,
+  "size": 4790761,
   "status": "ok"
  },
  {
@@ -126,7 +126,7 @@
   "site": "https://www.zonasul.com.br",
   "updated": "2026-10-28",
   "hist_level": "partial",
-  "old_share": 0.2771,
+  "old_share": 0.2786,
   "old_years": [
    "2021",
    "2022",
@@ -135,19 +135,19 @@
    "2025"
   ],
   "n": 23964,
-  "n_arch": 636,
+  "n_arch": 669,
   "oldest": "2021-01-13",
-  "n_prices": 24318,
-  "n_archive": 12339,
+  "n_prices": 25365,
+  "n_archive": 13386,
   "oldest_archive": "2021-01-13",
   "by_source": {
-   "a": 457,
-   "w": 3334,
-   "c": 8548,
+   "a": 458,
+   "w": 4416,
+   "c": 8512,
    "v": 11979
   },
   "has_old": true,
-  "size": 9754943,
+  "size": 9890098,
   "status": "ok"
  },
  {
@@ -156,26 +156,26 @@
   "site": "https://www.prezunic.com.br",
   "updated": "2026-11-08",
   "hist_level": "partial",
-  "old_share": 0.1453,
+  "old_share": 0.1534,
   "old_years": [
    "2023",
    "2024",
    "2025"
   ],
   "n": 29898,
-  "n_arch": 555,
+  "n_arch": 556,
   "oldest": "2023-03-14",
-  "n_prices": 17241,
-  "n_archive": 6389,
+  "n_prices": 19693,
+  "n_archive": 8841,
   "oldest_archive": "2023-03-14",
   "by_source": {
    "v": 10852,
    "a": 476,
-   "c": 4926,
-   "w": 987
+   "c": 4844,
+   "w": 3521
   },
   "has_old": true,
-  "size": 10200720,
+  "size": 10502776,
   "status": "ok"
  },
  {
@@ -193,16 +193,16 @@
   "n": 5908,
   "n_arch": 453,
   "oldest": "2023-01-19",
-  "n_prices": 7633,
-  "n_archive": 1484,
+  "n_prices": 7636,
+  "n_archive": 1487,
   "oldest_archive": "2023-01-19",
   "by_source": {
-   "w": 1222,
+   "w": 1225,
    "v": 6149,
    "c": 262
   },
   "has_old": true,
-  "size": 2278316,
+  "size": 2278669,
   "status": "ok"
  },
  {
@@ -211,24 +211,24 @@
   "site": "https://www.covabra.com.br",
   "updated": "2026-11-08",
   "hist_level": "partial",
-  "old_share": 0.1297,
+  "old_share": 0.1365,
   "old_years": [
    "2024",
    "2025"
   ],
   "n": 31437,
-  "n_arch": 34,
+  "n_arch": 43,
   "oldest": "2024-04-07",
-  "n_prices": 24744,
-  "n_archive": 9678,
+  "n_prices": 25475,
+  "n_archive": 10409,
   "oldest_archive": "2024-04-07",
   "by_source": {
-   "w": 6263,
+   "w": 6993,
    "v": 15066,
-   "c": 3415
+   "c": 3416
   },
   "has_old": true,
-  "size": 9710077,
+  "size": 9816362,
   "status": "ok"
  },
  {
@@ -237,7 +237,7 @@
   "site": "https://www.savegnago.com.br",
   "updated": "2026-11-08",
   "hist_level": "partial",
-  "old_share": 0.3248,
+  "old_share": 0.3537,
   "old_years": [
    "2016",
    "2017",
@@ -250,19 +250,19 @@
    "2025"
   ],
   "n": 16985,
-  "n_arch": 9130,
+  "n_arch": 10832,
   "oldest": "2016-11-16",
-  "n_prices": 46614,
-  "n_archive": 32353,
+  "n_prices": 52715,
+  "n_archive": 38454,
   "oldest_archive": "2016-11-16",
   "by_source": {
-   "w": 9160,
-   "c": 23146,
+   "w": 13374,
+   "c": 25033,
    "v": 14261,
    "a": 47
   },
   "has_old": true,
-  "size": 13133249,
+  "size": 14276517,
   "status": "ok"
  },
  {
@@ -271,7 +271,7 @@
   "site": "https://www.mambo.com.br",
   "updated": "2026-11-08",
   "hist_level": "partial",
-  "old_share": 0.2142,
+  "old_share": 0.2253,
   "old_years": [
    "2015",
    "2016",
@@ -284,19 +284,19 @@
    "2025"
   ],
   "n": 18561,
-  "n_arch": 7560,
+  "n_arch": 8901,
   "oldest": "2015-02-16",
-  "n_prices": 41985,
-  "n_archive": 25377,
+  "n_prices": 49558,
+  "n_archive": 32950,
   "oldest_archive": "2015-02-16",
   "by_source": {
-   "w": 14732,
+   "w": 20747,
    "v": 16608,
-   "c": 10555,
+   "c": 12113,
    "a": 90
   },
   "has_old": true,
-  "size": 10942395,
+  "size": 12142131,
   "status": "ok"
  },
  {
@@ -305,7 +305,7 @@
   "site": "https://www.supernosso.com",
   "updated": "2026-11-08",
   "hist_level": "partial",
-  "old_share": 0.199,
+  "old_share": 0.2002,
   "old_years": [
    "2019",
    "2020",
@@ -316,18 +316,18 @@
    "2025"
   ],
   "n": 35961,
-  "n_arch": 2001,
+  "n_arch": 2018,
   "oldest": "2019-09-17",
-  "n_prices": 56620,
-  "n_archive": 18097,
+  "n_prices": 57235,
+  "n_archive": 18712,
   "oldest_archive": "2019-09-17",
   "by_source": {
    "v": 38523,
-   "c": 11300,
-   "w": 6797
+   "c": 11898,
+   "w": 6814
   },
   "has_old": true,
-  "size": 15319372,
+  "size": 15464689,
   "status": "ok"
  },
  {
@@ -357,25 +357,25 @@
   "site": "https://www.mercantilatacado.com.br",
   "updated": "2026-11-08",
   "hist_level": "partial",
-  "old_share": 0.1837,
+  "old_share": 0.1858,
   "old_years": [
    "2023",
    "2024",
    "2025"
   ],
   "n": 12366,
-  "n_arch": 14,
+  "n_arch": 15,
   "oldest": "2023-07-13",
-  "n_prices": 8230,
-  "n_archive": 4398,
+  "n_prices": 8269,
+  "n_archive": 4437,
   "oldest_archive": "2023-07-13",
   "by_source": {
    "v": 3832,
-   "c": 2223,
-   "w": 2175
+   "c": 2216,
+   "w": 2221
   },
   "has_old": true,
-  "size": 4409586,
+  "size": 4413764,
   "status": "ok"
  },
  {
@@ -408,26 +408,26 @@
   "site": "https://www.bretas.com.br",
   "updated": "2026-11-08",
   "hist_level": "partial",
-  "old_share": 0.2184,
+  "old_share": 0.2555,
   "old_years": [
    "2023",
    "2024",
    "2025"
   ],
   "n": 28576,
-  "n_arch": 22,
+  "n_arch": 25,
   "oldest": "2023-02-15",
-  "n_prices": 11411,
-  "n_archive": 11409,
+  "n_prices": 14677,
+  "n_archive": 14675,
   "oldest_archive": "2023-02-15",
   "by_source": {
-   "w": 5290,
-   "c": 6083,
+   "w": 7096,
+   "c": 7543,
    "a": 36,
    "v": 2
   },
   "has_old": true,
-  "size": 10023939,
+  "size": 10588592,
   "status": "ok"
  }
 ]
