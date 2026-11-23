@@ -5,26 +5,26 @@
   "site": "https://www.zaffari.com.br",
   "updated": "2026-11-22",
   "hist_level": "partial",
-  "old_share": 0.4791,
+  "old_share": 0.4807,
   "old_years": [
    "2023",
    "2024",
    "2025"
   ],
   "n": 15947,
-  "n_arch": 2680,
+  "n_arch": 2694,
   "oldest": "2023-08-29",
-  "n_prices": 57590,
-  "n_archive": 32209,
+  "n_prices": 57641,
+  "n_archive": 32260,
   "oldest_archive": "2023-08-29",
   "by_source": {
-   "c": 18004,
+   "c": 17931,
    "a": 294,
-   "w": 13911,
+   "w": 14035,
    "v": 25381
   },
   "has_old": true,
-  "size": 11867798,
+  "size": 11974774,
   "status": "ok"
  },
  {
@@ -33,7 +33,7 @@
   "site": "https://www.supermuffato.com.br",
   "updated": "2026-11-22",
   "hist_level": "full",
-  "old_share": 0.7313,
+  "old_share": 0.7322,
   "old_years": [
    "2013",
    "2014",
@@ -50,18 +50,18 @@
    "2025"
   ],
   "n": 8121,
-  "n_arch": 35541,
+  "n_arch": 35542,
   "oldest": "2013-04-30",
-  "n_prices": 139550,
-  "n_archive": 123421,
+  "n_prices": 142562,
+  "n_archive": 126433,
   "oldest_archive": "2013-04-30",
   "by_source": {
-   "c": 94148,
-   "w": 29273,
+   "c": 93811,
+   "w": 32622,
    "v": 16129
   },
   "has_old": true,
-  "size": 35703337,
+  "size": 36052869,
   "status": "ok"
  },
  {
@@ -78,17 +78,17 @@
   "n": 12672,
   "n_arch": 2859,
   "oldest": "2024-05-27",
-  "n_prices": 38695,
-  "n_archive": 28701,
+  "n_prices": 38558,
+  "n_archive": 28564,
   "oldest_archive": "2024-05-27",
   "by_source": {
-   "w": 20355,
+   "w": 20328,
    "v": 9994,
-   "a": 141,
-   "c": 8205
+   "a": 142,
+   "c": 8094
   },
   "has_old": true,
-  "size": 8841877,
+  "size": 8811634,
   "status": "ok"
  },
  {
@@ -107,17 +107,17 @@
   "n": 11375,
   "n_arch": 484,
   "oldest": "2022-08-12",
-  "n_prices": 31903,
-  "n_archive": 3834,
+  "n_prices": 31825,
+  "n_archive": 3756,
   "oldest_archive": "2022-08-12",
   "by_source": {
-   "w": 2028,
-   "a": 31,
-   "c": 1775,
+   "w": 1982,
+   "a": 28,
+   "c": 1746,
    "v": 28069
   },
   "has_old": true,
-  "size": 5424046,
+  "size": 5408780,
   "status": "ok"
  },
  {
@@ -137,17 +137,17 @@
   "n": 23964,
   "n_arch": 685,
   "oldest": "2021-01-13",
-  "n_prices": 26323,
-  "n_archive": 14344,
+  "n_prices": 27363,
+  "n_archive": 15384,
   "oldest_archive": "2021-01-13",
   "by_source": {
    "a": 458,
-   "w": 5334,
+   "w": 6374,
    "c": 8552,
    "v": 11979
   },
   "has_old": true,
-  "size": 10018563,
+  "size": 10148924,
   "status": "ok"
  },
  {
@@ -156,26 +156,26 @@
   "site": "https://www.prezunic.com.br",
   "updated": "2026-11-22",
   "hist_level": "partial",
-  "old_share": 0.1524,
+  "old_share": 0.1529,
   "old_years": [
    "2023",
    "2024",
    "2025"
   ],
   "n": 30196,
-  "n_arch": 653,
+  "n_arch": 654,
   "oldest": "2023-03-14",
-  "n_prices": 23696,
-  "n_archive": 10196,
+  "n_prices": 26564,
+  "n_archive": 13064,
   "oldest_archive": "2023-03-14",
   "by_source": {
    "v": 13500,
    "a": 476,
-   "c": 4943,
-   "w": 4777
+   "c": 4942,
+   "w": 7646
   },
   "has_old": true,
-  "size": 10876405,
+  "size": 11313563,
   "status": "ok"
  },
  {
@@ -193,16 +193,16 @@
   "n": 6098,
   "n_arch": 453,
   "oldest": "2023-01-19",
-  "n_prices": 8489,
-  "n_archive": 1492,
+  "n_prices": 8496,
+  "n_archive": 1499,
   "oldest_archive": "2023-01-19",
   "by_source": {
-   "w": 1220,
+   "w": 1227,
    "v": 6997,
    "c": 272
   },
   "has_old": true,
-  "size": 2375289,
+  "size": 2376156,
   "status": "ok"
  },
  {
@@ -219,16 +219,16 @@
   "n": 31526,
   "n_arch": 43,
   "oldest": "2024-04-07",
-  "n_prices": 26797,
-  "n_archive": 10489,
+  "n_prices": 26825,
+  "n_archive": 10517,
   "oldest_archive": "2024-04-07",
   "by_source": {
-   "w": 7073,
+   "w": 7101,
    "v": 16308,
    "c": 3416
   },
   "has_old": true,
-  "size": 9910991,
+  "size": 9914070,
   "status": "ok"
  },
  {
@@ -237,7 +237,7 @@
   "site": "https://www.savegnago.com.br",
   "updated": "2026-11-22",
   "hist_level": "partial",
-  "old_share": 0.3574,
+  "old_share": 0.3643,
   "old_years": [
    "2016",
    "2017",
@@ -252,17 +252,17 @@
   "n": 17289,
   "n_arch": 10834,
   "oldest": "2016-11-16",
-  "n_prices": 58673,
-  "n_archive": 43408,
+  "n_prices": 60587,
+  "n_archive": 45322,
   "oldest_archive": "2016-11-16",
   "by_source": {
-   "w": 14749,
-   "c": 28612,
+   "w": 16877,
+   "c": 28398,
    "v": 15265,
    "a": 47
   },
   "has_old": true,
-  "size": 15337569,
+  "size": 15533434,
   "status": "ok"
  },
  {
@@ -271,7 +271,7 @@
   "site": "https://www.mambo.com.br",
   "updated": "2026-11-22",
   "hist_level": "partial",
-  "old_share": 0.229,
+  "old_share": 0.2346,
   "old_years": [
    "2015",
    "2016",
@@ -284,19 +284,19 @@
    "2025"
   ],
   "n": 18669,
-  "n_arch": 9740,
+  "n_arch": 10935,
   "oldest": "2015-02-16",
-  "n_prices": 54267,
-  "n_archive": 36835,
+  "n_prices": 57149,
+  "n_archive": 39717,
   "oldest_archive": "2015-02-16",
   "by_source": {
-   "w": 24634,
+   "w": 27512,
    "v": 17432,
-   "c": 12111,
+   "c": 12115,
    "a": 90
   },
   "has_old": true,
-  "size": 12747711,
+  "size": 13329384,
   "status": "ok"
  },
  {
@@ -305,7 +305,7 @@
   "site": "https://www.supernosso.com",
   "updated": "2026-11-22",
   "hist_level": "partial",
-  "old_share": 0.1997,
+  "old_share": 0.1998,
   "old_years": [
    "2019",
    "2020",
@@ -316,18 +316,18 @@
    "2025"
   ],
   "n": 36067,
-  "n_arch": 2018,
+  "n_arch": 2019,
   "oldest": "2019-09-17",
-  "n_prices": 59933,
-  "n_archive": 19091,
+  "n_prices": 59943,
+  "n_archive": 19101,
   "oldest_archive": "2019-09-17",
   "by_source": {
    "v": 40842,
-   "c": 11898,
-   "w": 7193
+   "c": 11904,
+   "w": 7197
   },
   "has_old": true,
-  "size": 15604718,
+  "size": 15606781,
   "status": "ok"
  },
  {
@@ -366,16 +366,16 @@
   "n": 12366,
   "n_arch": 15,
   "oldest": "2023-07-13",
-  "n_prices": 8643,
-  "n_archive": 4570,
+  "n_prices": 8706,
+  "n_archive": 4633,
   "oldest_archive": "2023-07-13",
   "by_source": {
    "v": 4073,
-   "c": 2216,
-   "w": 2354
+   "c": 2215,
+   "w": 2418
   },
   "has_old": true,
-  "size": 4438597,
+  "size": 4446563,
   "status": "ok"
  },
  {
@@ -417,17 +417,17 @@
   "n": 28576,
   "n_arch": 25,
   "oldest": "2023-02-15",
-  "n_prices": 15657,
-  "n_archive": 15655,
+  "n_prices": 15660,
+  "n_archive": 15658,
   "oldest_archive": "2023-02-15",
   "by_source": {
-   "w": 7084,
+   "w": 7087,
    "c": 8535,
    "a": 36,
    "v": 2
   },
   "has_old": true,
-  "size": 10815411,
+  "size": 10815796,
   "status": "ok"
  }
 ]
