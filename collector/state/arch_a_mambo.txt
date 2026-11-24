@@ -88,3 +88,4 @@
 20231119104525|https://www.mambo.com.br/condicionador-brilho-extremo-pantene-400ml/p
 20231119104532|https://www.mambo.com.br/condicionador-hidratacao-antinos-seda-325ml/p
 20231220205526|https://www.mambo.com.br/manteiga-extra-com-sal-la-serenissima-tablete-200g/p
+20231220205554|https://www.mambo.com.br/_v/segment/routing/vtex.store@2.x/product/9060/manteiga-extra-com-sal-la-serenissima-tablete-200g/p
